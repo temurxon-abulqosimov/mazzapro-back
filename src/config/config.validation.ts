@@ -78,6 +78,31 @@ export function validateConfig(): ValidationResult {
     }
   }
 
+  // Stripe/Payments validation
+  const paymentsEnabled =
+    process.env.PAYMENTS_ENABLED === 'true' ||
+    (process.env.NODE_ENV !== 'production' &&
+      process.env.PAYMENTS_ENABLED !== 'false');
+
+  if (paymentsEnabled) {
+    if (!process.env.STRIPE_SECRET_KEY) {
+      errors.push(
+        'STRIPE_SECRET_KEY is required when payments are enabled. ' +
+          'Set PAYMENTS_ENABLED=false to disable payments.',
+      );
+    }
+    if (!process.env.STRIPE_WEBHOOK_SECRET) {
+      warnings.push(
+        'STRIPE_WEBHOOK_SECRET is not set. Webhook signature verification will fail.',
+      );
+    }
+  } else {
+    warnings.push(
+      'Payments are DISABLED (PAYMENTS_ENABLED=false). ' +
+        'Bookings will fail payment processing.',
+    );
+  }
+
   return {
     valid: errors.length === 0,
     errors,

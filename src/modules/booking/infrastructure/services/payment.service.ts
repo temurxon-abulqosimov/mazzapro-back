@@ -1,34 +1,42 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import Stripe from 'stripe';
-import { PaymentFailedException } from '@common/exceptions';
+import {
+  IPaymentService,
+  CapturePaymentResult,
+  RefundPaymentResult,
+  SetupIntentResult,
+} from './payment.interface';
 
-export interface CapturePaymentResult {
-  success: boolean;
-  transactionId?: string;
-  last4?: string;
-  cardBrand?: string;
-  error?: string;
-}
-
-export interface RefundPaymentResult {
-  success: boolean;
-  refundId?: string;
-  error?: string;
-}
-
+/**
+ * Stripe Payment Service
+ *
+ * Production implementation of IPaymentService using Stripe.
+ * Only instantiated when PAYMENTS_ENABLED=true.
+ */
 @Injectable()
-export class PaymentService {
+export class StripePaymentService implements IPaymentService {
   private stripe: Stripe;
-  private readonly logger = new Logger(PaymentService.name);
+  private readonly logger = new Logger(StripePaymentService.name);
 
   constructor(private readonly configService: ConfigService) {
-    this.stripe = new Stripe(
-      this.configService.get<string>('stripe.secretKey') || '',
-      {
-        apiVersion: '2023-10-16',
-      },
-    );
+    const secretKey = this.configService.get<string>('stripe.secretKey');
+
+    if (!secretKey) {
+      throw new Error(
+        'STRIPE_SECRET_KEY is required when payments are enabled',
+      );
+    }
+
+    this.stripe = new Stripe(secretKey, {
+      apiVersion: '2023-10-16',
+    });
+
+    this.logger.log('Stripe payment service initialized');
+  }
+
+  isEnabled(): boolean {
+    return true;
   }
 
   async capturePayment(
@@ -142,7 +150,7 @@ export class PaymentService {
     }
   }
 
-  async createSetupIntent(customerId?: string): Promise<{ clientSecret: string }> {
+  async createSetupIntent(customerId?: string): Promise<SetupIntentResult> {
     const setupIntent = await this.stripe.setupIntents.create({
       customer: customerId,
       payment_method_types: ['card'],

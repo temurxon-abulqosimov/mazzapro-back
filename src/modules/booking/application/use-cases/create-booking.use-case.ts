@@ -10,7 +10,10 @@ import {
   IProductRepository,
   PRODUCT_REPOSITORY,
 } from '@modules/catalog/domain/repositories/product.repository.interface';
-import { PaymentService } from '../../infrastructure/services/payment.service';
+import {
+  IPaymentService,
+  PAYMENT_SERVICE,
+} from '../../infrastructure/services/payment.interface';
 import { QrCodeService } from '../../infrastructure/services/qr-code.service';
 import { CreateBookingDto } from '../dto/booking.dto';
 import {
@@ -30,7 +33,8 @@ export class CreateBookingUseCase {
     private readonly bookingRepository: IBookingRepository,
     @Inject(PRODUCT_REPOSITORY)
     private readonly productRepository: IProductRepository,
-    private readonly paymentService: PaymentService,
+    @Inject(PAYMENT_SERVICE)
+    private readonly paymentService: IPaymentService,
     private readonly qrCodeService: QrCodeService,
     private readonly dataSource: DataSource,
   ) {}

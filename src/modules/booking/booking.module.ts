@@ -1,5 +1,6 @@
-import { Module, forwardRef } from '@nestjs/common';
+import { Module, forwardRef, Logger } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
+import { ConfigModule, ConfigService } from '@nestjs/config';
 
 // Entities
 import { Booking, Payment } from './domain/entities';
@@ -9,7 +10,12 @@ import { BOOKING_REPOSITORY } from './domain/repositories';
 import { TypeOrmBookingRepository } from './infrastructure/repositories';
 
 // Services
-import { PaymentService, QrCodeService } from './infrastructure/services';
+import {
+  PAYMENT_SERVICE,
+  StripePaymentService,
+  NullPaymentService,
+  QrCodeService,
+} from './infrastructure/services';
 
 // Schedulers
 import { BookingExpirationScheduler } from './infrastructure/schedulers';
@@ -40,6 +46,7 @@ import { Product } from '@modules/catalog/domain/entities/product.entity';
 @Module({
   imports: [
     TypeOrmModule.forFeature([Booking, Payment, Product]),
+    ConfigModule,
     forwardRef(() => CatalogModule),
     forwardRef(() => IdentityModule),
     forwardRef(() => StoreModule),
@@ -54,8 +61,25 @@ import { Product } from '@modules/catalog/domain/entities/product.entity';
       useClass: TypeOrmBookingRepository,
     },
 
+    // Payment Service - conditionally provide real or null implementation
+    {
+      provide: PAYMENT_SERVICE,
+      useFactory: (configService: ConfigService) => {
+        const logger = new Logger('PaymentServiceFactory');
+        const paymentsEnabled = configService.get<boolean>('stripe.enabled');
+
+        if (paymentsEnabled) {
+          logger.log('Payments ENABLED - using StripePaymentService');
+          return new StripePaymentService(configService);
+        } else {
+          logger.warn('Payments DISABLED - using NullPaymentService');
+          return new NullPaymentService();
+        }
+      },
+      inject: [ConfigService],
+    },
+
     // Services
-    PaymentService,
     QrCodeService,
 
     // Use Cases
