@@ -59,7 +59,7 @@ export class Notification {
   @Column({ type: 'text' })
   body: string;
 
-  @Column({ name: 'image_url', nullable: true })
+  @Column({ name: 'image_url', type: 'text', nullable: true })
   imageUrl: string | null;
 
   @Column({ type: 'jsonb', nullable: true })
@@ -69,13 +69,13 @@ export class Notification {
   @Index()
   isRead: boolean;
 
-  @Column({ name: 'read_at', nullable: true })
+  @Column({ name: 'read_at', type: 'timestamp', nullable: true })
   readAt: Date | null;
 
   @Column({ name: 'push_sent', default: false })
   pushSent: boolean;
 
-  @Column({ name: 'push_sent_at', nullable: true })
+  @Column({ name: 'push_sent_at', type: 'timestamp', nullable: true })
   pushSentAt: Date | null;
 
   @CreateDateColumn({ name: 'created_at' })

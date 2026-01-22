@@ -50,7 +50,7 @@ export class Store {
   @Column({ type: 'decimal', precision: 10, scale: 7 })
   lng: number;
 
-  @Column({ name: 'image_url', nullable: true })
+  @Column({ name: 'image_url', type: 'text', nullable: true })
   imageUrl: string | null;
 
   @Column({ type: 'decimal', precision: 2, scale: 1, default: 0 })

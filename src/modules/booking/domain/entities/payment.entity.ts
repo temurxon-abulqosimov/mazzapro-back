@@ -45,11 +45,11 @@ export class Payment {
   @Index()
   status: PaymentStatus;
 
-  @Column({ name: 'provider_tx_id', nullable: true })
+  @Column({ name: 'provider_tx_id', type: 'varchar', length: 255, nullable: true })
   @Index()
   providerTxId: string | null; // Stripe charge/payment intent ID
 
-  @Column({ name: 'provider_payment_method_id', nullable: true })
+  @Column({ name: 'provider_payment_method_id', type: 'varchar', length: 255, nullable: true })
   providerPaymentMethodId: string | null;
 
   @Column({ name: 'idempotency_key', unique: true })
@@ -59,16 +59,16 @@ export class Payment {
   @Column({ name: 'refunded_amount', default: 0 })
   refundedAmount: number;
 
-  @Column({ name: 'refund_tx_id', nullable: true })
+  @Column({ name: 'refund_tx_id', type: 'varchar', length: 255, nullable: true })
   refundTxId: string | null;
 
-  @Column({ name: 'last4', nullable: true })
+  @Column({ name: 'last4', type: 'varchar', length: 4, nullable: true })
   last4: string | null;
 
-  @Column({ name: 'card_brand', nullable: true })
+  @Column({ name: 'card_brand', type: 'varchar', length: 50, nullable: true })
   cardBrand: string | null;
 
-  @Column({ name: 'failure_reason', nullable: true })
+  @Column({ name: 'failure_reason', type: 'text', nullable: true })
   failureReason: string | null;
 
   @CreateDateColumn({ name: 'created_at' })

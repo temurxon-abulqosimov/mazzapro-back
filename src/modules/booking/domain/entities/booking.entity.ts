@@ -81,7 +81,7 @@ export class Booking {
   @Column({ name: 'qr_code', type: 'text', nullable: true })
   qrCode: string | null;
 
-  @Column({ name: 'qr_code_data', nullable: true })
+  @Column({ name: 'qr_code_data', type: 'varchar', length: 255, nullable: true })
   qrCodeData: string | null;
 
   @Column({ name: 'pickup_window_start', type: 'timestamp with time zone' })
@@ -90,7 +90,7 @@ export class Booking {
   @Column({ name: 'pickup_window_end', type: 'timestamp with time zone' })
   pickupWindowEnd: Date;
 
-  @Column({ name: 'idempotency_key', unique: true, nullable: true })
+  @Column({ name: 'idempotency_key', type: 'varchar', length: 255, unique: true, nullable: true })
   @Index()
   idempotencyKey: string | null;
 
@@ -103,16 +103,16 @@ export class Booking {
   @UpdateDateColumn({ name: 'updated_at' })
   updatedAt: Date;
 
-  @Column({ name: 'confirmed_at', nullable: true })
+  @Column({ name: 'confirmed_at', type: 'timestamp', nullable: true })
   confirmedAt: Date | null;
 
-  @Column({ name: 'completed_at', nullable: true })
+  @Column({ name: 'completed_at', type: 'timestamp', nullable: true })
   completedAt: Date | null;
 
-  @Column({ name: 'cancelled_at', nullable: true })
+  @Column({ name: 'cancelled_at', type: 'timestamp', nullable: true })
   cancelledAt: Date | null;
 
-  @Column({ name: 'cancellation_reason', nullable: true })
+  @Column({ name: 'cancellation_reason', type: 'text', nullable: true })
   cancellationReason: string | null;
 
   // Domain methods

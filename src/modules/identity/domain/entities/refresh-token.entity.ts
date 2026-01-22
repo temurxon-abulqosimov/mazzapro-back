@@ -32,13 +32,13 @@ export class RefreshToken {
   @Column({ name: 'is_revoked', default: false })
   isRevoked: boolean;
 
-  @Column({ name: 'device_info', nullable: true })
+  @Column({ name: 'device_info', type: 'text', nullable: true })
   deviceInfo: string | null;
 
   @CreateDateColumn({ name: 'created_at' })
   createdAt: Date;
 
-  @Column({ name: 'last_used_at', nullable: true })
+  @Column({ name: 'last_used_at', type: 'timestamp', nullable: true })
   lastUsedAt: Date | null;
 
   isExpired(): boolean {

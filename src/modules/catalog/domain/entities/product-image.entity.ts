@@ -26,7 +26,7 @@ export class ProductImage {
   @Column()
   url: string;
 
-  @Column({ name: 'thumbnail_url', nullable: true })
+  @Column({ name: 'thumbnail_url', type: 'text', nullable: true })
   thumbnailUrl: string | null;
 
   @Column({ default: 0 })

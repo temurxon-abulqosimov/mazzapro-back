@@ -40,19 +40,19 @@ export class Seller {
   @Column({ name: 'business_name' })
   businessName: string;
 
-  @Column({ name: 'business_phone', nullable: true })
+  @Column({ name: 'business_phone', type: 'varchar', length: 50, nullable: true })
   businessPhone: string | null;
 
-  @Column({ name: 'rejection_reason', nullable: true })
+  @Column({ name: 'rejection_reason', type: 'text', nullable: true })
   rejectionReason: string | null;
 
-  @Column({ name: 'applied_at' })
+  @Column({ name: 'applied_at', type: 'timestamp' })
   appliedAt: Date;
 
-  @Column({ name: 'approved_at', nullable: true })
+  @Column({ name: 'approved_at', type: 'timestamp', nullable: true })
   approvedAt: Date | null;
 
-  @Column({ name: 'approved_by', nullable: true })
+  @Column({ name: 'approved_by', type: 'uuid', nullable: true })
   approvedBy: string | null;
 
   @CreateDateColumn({ name: 'created_at' })

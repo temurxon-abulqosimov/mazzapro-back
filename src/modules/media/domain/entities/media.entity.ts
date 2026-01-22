@@ -78,10 +78,10 @@ export class Media {
   @Column({ name: 's3_bucket' })
   s3Bucket: string;
 
-  @Column({ nullable: true })
+  @Column({ type: 'text', nullable: true })
   url: string | null;
 
-  @Column({ name: 'thumbnail_url', nullable: true })
+  @Column({ name: 'thumbnail_url', type: 'text', nullable: true })
   thumbnailUrl: string | null;
 
   @Column({ type: 'int', nullable: true })
@@ -90,16 +90,16 @@ export class Media {
   @Column({ type: 'int', nullable: true })
   height: number | null;
 
-  @Column({ name: 'processing_error', nullable: true })
+  @Column({ name: 'processing_error', type: 'text', nullable: true })
   processingError: string | null;
 
   @CreateDateColumn({ name: 'created_at' })
   createdAt: Date;
 
-  @Column({ name: 'uploaded_at', nullable: true })
+  @Column({ name: 'uploaded_at', type: 'timestamp', nullable: true })
   uploadedAt: Date | null;
 
-  @Column({ name: 'processed_at', nullable: true })
+  @Column({ name: 'processed_at', type: 'timestamp', nullable: true })
   processedAt: Date | null;
 
   markUploaded(fileSize: number): void {
