@@ -1,9 +1,10 @@
-import { Controller, Get } from '@nestjs/common';
+import { Controller, Get, HttpStatus, Res } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiResponse } from '@nestjs/swagger';
 import { InjectDataSource } from '@nestjs/typeorm';
 import { DataSource } from 'typeorm';
 import { RedisService } from '@common/redis/redis.service';
 import { Public } from '@common/decorators/public.decorator';
+import { Response } from 'express';
 
 interface HealthStatus {
   status: 'healthy' | 'unhealthy';
@@ -32,7 +33,7 @@ export class HealthController {
   @ApiOperation({ summary: 'Health check endpoint' })
   @ApiResponse({ status: 200, description: 'Service is healthy' })
   @ApiResponse({ status: 503, description: 'Service is unhealthy' })
-  async check(): Promise<HealthStatus> {
+  async check(@Res() res: Response): Promise<void> {
     const checks = {
       database: await this.checkDatabase(),
       redis: await this.checkRedis(),
@@ -40,13 +41,15 @@ export class HealthController {
 
     const isHealthy = checks.database.status === 'up' && checks.redis.status === 'up';
 
-    return {
+    const response: HealthStatus = {
       status: isHealthy ? 'healthy' : 'unhealthy',
       timestamp: new Date().toISOString(),
       uptime: Math.floor((Date.now() - this.startTime) / 1000),
       version: process.env.npm_package_version || '1.0.0',
       checks,
     };
+
+    res.status(isHealthy ? HttpStatus.OK : HttpStatus.SERVICE_UNAVAILABLE).json(response);
   }
 
   @Get('live')
@@ -62,14 +65,16 @@ export class HealthController {
   @ApiOperation({ summary: 'Readiness probe - checks if the service can accept traffic' })
   @ApiResponse({ status: 200, description: 'Service is ready' })
   @ApiResponse({ status: 503, description: 'Service is not ready' })
-  async ready(): Promise<{ status: string; ready: boolean }> {
+  async ready(@Res() res: Response): Promise<void> {
     const dbCheck = await this.checkDatabase();
     const isReady = dbCheck.status === 'up';
 
-    return {
+    const response = {
       status: isReady ? 'ok' : 'unavailable',
       ready: isReady,
     };
+
+    res.status(isReady ? HttpStatus.OK : HttpStatus.SERVICE_UNAVAILABLE).json(response);
   }
 
   private async checkDatabase(): Promise<{ status: 'up' | 'down'; latencyMs?: number }> {

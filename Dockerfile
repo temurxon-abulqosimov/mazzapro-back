@@ -46,7 +46,9 @@ WORKDIR /app
 
 # Set production environment
 ENV NODE_ENV=production
+# PORT is injected by Railway - default to 3000 for local testing
 ENV PORT=3000
+ENV HOST=0.0.0.0
 
 # Create non-root user for security
 RUN addgroup --system --gid 1001 nodejs && \
@@ -60,13 +62,14 @@ COPY --from=builder --chown=nestjs:nodejs /app/package.json ./package.json
 # Switch to non-root user
 USER nestjs
 
-# Expose port
-EXPOSE 3000
+# Expose port (Railway overrides this with its own PORT)
+EXPOSE ${PORT}
 
-# Health check
+# Health check using dynamic PORT
+# Note: Using shell form to expand $PORT variable
 HEALTHCHECK --interval=30s --timeout=10s --start-period=60s --retries=3 \
-  CMD wget --no-verbose --tries=1 --spider http://localhost:3000/health/live || exit 1
+  CMD sh -c "wget --no-verbose --tries=1 --spider http://localhost:\${PORT:-3000}/health/live || exit 1"
 
 # Start the application
-# Migrations run before app start
+# Migrations run before app start, then start NestJS
 CMD ["sh", "-c", "node ./node_modules/typeorm/cli.js migration:run -d dist/data-source.js && node dist/main"]

@@ -8,11 +8,16 @@ import { TransformInterceptor } from '@common/interceptors/transform.interceptor
 import { RequestIdInterceptor } from '@common/interceptors/request-id.interceptor';
 
 async function bootstrap() {
-  const app = await NestFactory.create(AppModule);
+  const app = await NestFactory.create(AppModule, {
+    logger: ['error', 'warn', 'log'],
+  });
   const configService = app.get(ConfigService);
 
-  // API Versioning
-  app.setGlobalPrefix(configService.get<string>('API_PREFIX', 'api/v1'));
+  // API Versioning - exclude health endpoints from prefix
+  const apiPrefix = configService.get<string>('API_PREFIX', 'api/v1');
+  app.setGlobalPrefix(apiPrefix, {
+    exclude: ['health', 'health/live', 'health/ready'],
+  });
   app.enableVersioning({
     type: VersioningType.URI,
     defaultVersion: '1',
@@ -79,11 +84,21 @@ async function bootstrap() {
     SwaggerModule.setup('docs', app, document);
   }
 
-  const port = configService.get<number>('PORT', 3000);
-  await app.listen(port);
+  // Use process.env.PORT directly for Railway compatibility
+  // Railway injects PORT dynamically
+  const port = process.env.PORT || configService.get<number>('PORT', 3000);
 
-  console.log(`🚀 MAZZA API running on: http://localhost:${port}`);
-  console.log(`📚 API Documentation: http://localhost:${port}/docs`);
+  // Listen on 0.0.0.0 to accept connections from outside the container
+  await app.listen(port, '0.0.0.0');
+
+  console.log(`🚀 MAZZA API running on port ${port}`);
+  console.log(`📚 Environment: ${process.env.NODE_ENV || 'development'}`);
+  if (process.env.NODE_ENV !== 'production') {
+    console.log(`📚 API Documentation: http://localhost:${port}/docs`);
+  }
 }
 
-bootstrap();
+bootstrap().catch((err) => {
+  console.error('Failed to start application:', err);
+  process.exit(1);
+});
