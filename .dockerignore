@@ -1,0 +1,52 @@
+# Dependencies (will be installed fresh)
+node_modules
+
+# Build output (will be rebuilt)
+dist
+
+# Git
+.git
+.gitignore
+
+# IDE
+.idea
+.vscode
+*.swp
+*.swo
+
+# Environment files (secrets - never include!)
+.env
+.env.*
+!.env.example
+
+# Documentation
+docs
+*.md
+!README.md
+
+# Tests
+test
+coverage
+*.spec.ts
+*.test.ts
+jest.config.*
+
+# Development files
+.eslintrc*
+.prettierrc*
+tsconfig.build.json
+nest-cli.json
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Logs
+logs
+*.log
+npm-debug.log*
+
+# Misc
+.npmrc
+.nvmrc
+*.tsbuildinfo
