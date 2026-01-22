@@ -5,10 +5,16 @@ node_modules/
 dist/
 build/
 
-# Environment
+# Environment (NEVER commit secrets)
 .env
 .env.local
 .env.*.local
+.env.production
+.env.staging
+*.pem
+*.key
+service-account.json
+firebase-adminsdk*.json
 
 # IDE
 .idea/
