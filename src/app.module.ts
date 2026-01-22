@@ -27,6 +27,7 @@ import { MediaModule } from '@modules/media/media.module';
 import { AdminModule } from '@modules/admin/admin.module';
 import { RedisModule } from '@common/redis/redis.module';
 import { HealthModule } from '@common/health';
+import { DatabaseReadinessService } from '@common/services';
 
 @Module({
   imports: [
@@ -128,6 +129,9 @@ import { HealthModule } from '@common/health';
       provide: APP_GUARD,
       useClass: ThrottlerGuard,
     },
+    // Database readiness tracking for schedulers
+    DatabaseReadinessService,
   ],
+  exports: [DatabaseReadinessService],
 })
 export class AppModule {}

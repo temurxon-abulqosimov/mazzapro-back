@@ -71,6 +71,6 @@ HEALTHCHECK --interval=30s --timeout=10s --start-period=60s --retries=3 \
   CMD sh -c "wget --no-verbose --tries=1 --spider http://localhost:\${PORT:-3000}/health/live || exit 1"
 
 # Start the application
-# Run migrations (don't fail if they error - might already be applied or DB temporarily unavailable)
-# Then start NestJS regardless
-CMD ["sh", "-c", "echo 'Running migrations...' && node ./node_modules/typeorm/cli.js migration:run -d dist/data-source.js || echo 'Migration warning (may be ok if already applied)' && echo 'Starting NestJS...' && exec node dist/main"]
+# Migrations are run programmatically in main.ts before app.listen()
+# This ensures database schema is ready before any routes or schedulers execute
+CMD ["node", "dist/main"]

@@ -7,6 +7,7 @@ import { Product } from '@modules/catalog/domain/entities/product.entity';
 import { SendNotificationUseCase } from '@modules/notification/application/use-cases';
 import { NotificationType } from '@modules/notification/domain/entities/notification.entity';
 import { RedisService } from '@common/redis/redis.service';
+import { DatabaseReadinessService } from '@common/services';
 
 @Injectable()
 export class BookingExpirationScheduler {
@@ -24,6 +25,7 @@ export class BookingExpirationScheduler {
     private readonly productRepository: Repository<Product>,
     private readonly sendNotificationUseCase: SendNotificationUseCase,
     private readonly redisService: RedisService,
+    private readonly databaseReadiness: DatabaseReadinessService,
   ) {}
 
   /**
@@ -32,6 +34,12 @@ export class BookingExpirationScheduler {
    */
   @Cron(CronExpression.EVERY_MINUTE)
   async handleExpiredBookings(): Promise<void> {
+    // Skip if database schema is not ready (migrations pending)
+    if (!this.databaseReadiness.isReady) {
+      this.logger.debug('Database not ready, skipping expiration job');
+      return;
+    }
+
     // Acquire distributed lock to prevent concurrent runs across cluster
     const lockAcquired = await this.redisService.setNX(
       this.EXPIRATION_LOCK_KEY,
@@ -146,6 +154,12 @@ export class BookingExpirationScheduler {
    */
   @Cron('*/30 * * * *')
   async handlePickupReminders(): Promise<void> {
+    // Skip if database schema is not ready (migrations pending)
+    if (!this.databaseReadiness.isReady) {
+      this.logger.debug('Database not ready, skipping reminder job');
+      return;
+    }
+
     // Acquire distributed lock to prevent concurrent runs across cluster
     const lockAcquired = await this.redisService.setNX(
       this.REMINDER_LOCK_KEY,

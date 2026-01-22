@@ -10,6 +10,61 @@ import {
   validateConfig,
   logValidationResult,
 } from '@config/config.validation';
+import { AppDataSource } from './data-source';
+
+// Global flag to indicate database readiness
+// Exported for use by schedulers and other services
+export let isDatabaseReady = false;
+
+async function runMigrations(): Promise<boolean> {
+  console.log('=== Running Database Migrations ===');
+
+  try {
+    // Initialize the data source
+    if (!AppDataSource.isInitialized) {
+      console.log('Initializing database connection...');
+      await AppDataSource.initialize();
+      console.log('Database connection established');
+    }
+
+    // Run pending migrations
+    console.log('Checking for pending migrations...');
+    const pendingMigrations = await AppDataSource.showMigrations();
+
+    if (pendingMigrations) {
+      console.log('Running pending migrations...');
+      const migrations = await AppDataSource.runMigrations();
+
+      if (migrations.length > 0) {
+        console.log(`✅ ${migrations.length} migration(s) executed:`);
+        migrations.forEach((m) => console.log(`   - ${m.name}`));
+      } else {
+        console.log('✅ No pending migrations to run');
+      }
+    } else {
+      console.log('✅ Database schema is up to date');
+    }
+
+    // Close the standalone connection (NestJS will manage its own)
+    await AppDataSource.destroy();
+    console.log('Migration connection closed');
+
+    return true;
+  } catch (error) {
+    console.error('❌ Migration failed:', error instanceof Error ? error.message : error);
+
+    // Try to close connection if it was opened
+    try {
+      if (AppDataSource.isInitialized) {
+        await AppDataSource.destroy();
+      }
+    } catch {
+      // Ignore cleanup errors
+    }
+
+    return false;
+  }
+}
 
 async function bootstrap() {
   console.log('=== Starting NestJS application ===');
@@ -19,6 +74,19 @@ async function bootstrap() {
   // Validate configuration before proceeding
   const validationResult = validateConfig();
   logValidationResult(validationResult);
+
+  // Run migrations BEFORE creating the NestJS app
+  // This ensures database schema exists before any module initializes
+  const migrationsSuccessful = await runMigrations();
+
+  if (!migrationsSuccessful) {
+    console.warn('⚠️  Migrations failed - app will start but database may not be ready');
+    console.warn('⚠️  Schedulers and DB queries may fail until migrations complete');
+  } else {
+    // Mark database as ready only after successful migrations
+    isDatabaseReady = true;
+    console.log('✅ Database is ready');
+  }
 
   const app = await NestFactory.create(AppModule, {
     logger: ['error', 'warn', 'log'],
