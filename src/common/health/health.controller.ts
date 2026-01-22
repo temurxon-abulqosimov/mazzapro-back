@@ -1,4 +1,4 @@
-import { Controller, Get, HttpStatus, Res, Optional } from '@nestjs/common';
+import { Controller, Get, HttpStatus, Res, Optional, VERSION_NEUTRAL } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiResponse } from '@nestjs/swagger';
 import { InjectDataSource } from '@nestjs/typeorm';
 import { DataSource } from 'typeorm';
@@ -18,7 +18,7 @@ interface HealthStatus {
 }
 
 @ApiTags('Health')
-@Controller('health')
+@Controller({ path: 'health', version: VERSION_NEUTRAL })
 export class HealthController {
   private readonly startTime = Date.now();
 

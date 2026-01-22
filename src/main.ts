@@ -1,22 +1,42 @@
 import { NestFactory } from '@nestjs/core';
-import { ValidationPipe, VersioningType } from '@nestjs/common';
+import { ValidationPipe, VersioningType, RequestMethod } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 import { AppModule } from './app.module';
 import { HttpExceptionFilter } from '@common/filters/http-exception.filter';
 import { TransformInterceptor } from '@common/interceptors/transform.interceptor';
 import { RequestIdInterceptor } from '@common/interceptors/request-id.interceptor';
+import {
+  validateConfig,
+  logValidationResult,
+} from '@config/config.validation';
 
 async function bootstrap() {
+  console.log('=== Starting NestJS application ===');
+  console.log(`PORT: ${process.env.PORT || '(not set, using default)'}`);
+  console.log(`NODE_ENV: ${process.env.NODE_ENV || 'development'}`);
+
+  // Validate configuration before proceeding
+  const validationResult = validateConfig();
+  logValidationResult(validationResult);
+
   const app = await NestFactory.create(AppModule, {
     logger: ['error', 'warn', 'log'],
+    abortOnError: false, // Don't abort on module init errors - let health check work
   });
+
+  console.log('NestJS application instance created');
+
   const configService = app.get(ConfigService);
 
-  // API Versioning - exclude health endpoints from prefix
+  // API Versioning - exclude health endpoints from prefix using RouteInfo
   const apiPrefix = configService.get<string>('API_PREFIX', 'api/v1');
   app.setGlobalPrefix(apiPrefix, {
-    exclude: ['health', 'health/live', 'health/ready'],
+    exclude: [
+      { path: 'health', method: RequestMethod.GET },
+      { path: 'health/live', method: RequestMethod.GET },
+      { path: 'health/ready', method: RequestMethod.GET },
+    ],
   });
   app.enableVersioning({
     type: VersioningType.URI,

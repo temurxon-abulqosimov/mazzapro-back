@@ -13,6 +13,8 @@ import { RedisService } from './redis.service';
         port: configService.get<number>('redis.port'),
         password: configService.get<string>('redis.password'),
         db: configService.get<number>('redis.db'),
+        tls: configService.get<boolean>('redis.tls'),
+        url: configService.get<string>('redis.url'),
       }),
       inject: [ConfigService],
     },

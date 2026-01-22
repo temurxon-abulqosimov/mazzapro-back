@@ -5,13 +5,15 @@ import {
   Inject,
   Logger,
 } from '@nestjs/common';
-import Redis from 'ioredis';
+import Redis, { RedisOptions as IoRedisOptions } from 'ioredis';
 
 interface RedisOptions {
   host: string;
   port: number;
   password?: string;
   db?: number;
+  tls?: boolean;
+  url?: string;
 }
 
 @Injectable()
@@ -22,19 +24,46 @@ export class RedisService implements OnModuleInit, OnModuleDestroy {
   constructor(@Inject('REDIS_OPTIONS') private options: RedisOptions) {}
 
   async onModuleInit() {
-    this.client = new Redis({
-      host: this.options.host,
-      port: this.options.port,
-      password: this.options.password || undefined,
-      db: this.options.db || 0,
-      retryStrategy: (times) => {
-        if (times > 3) {
-          this.logger.error('Redis connection failed after 3 retries');
-          return null;
-        }
-        return Math.min(times * 200, 2000);
-      },
-    });
+    // If URL is provided, use it directly (ioredis supports URL connections)
+    if (this.options.url) {
+      this.logger.log('Connecting to Redis using URL');
+      const urlOptions: IoRedisOptions = {
+        retryStrategy: this.createRetryStrategy(),
+        maxRetriesPerRequest: 3,
+        enableReadyCheck: true,
+        lazyConnect: false,
+      };
+
+      // For rediss:// URLs, ioredis handles TLS automatically
+      // For Railway internal network, we may need to disable TLS verification
+      if (this.options.tls) {
+        urlOptions.tls = { rejectUnauthorized: false };
+      }
+
+      this.client = new Redis(this.options.url, urlOptions);
+    } else {
+      // Use individual options
+      this.logger.log(
+        `Connecting to Redis at ${this.options.host}:${this.options.port}`,
+      );
+      const connectionOptions: IoRedisOptions = {
+        host: this.options.host,
+        port: this.options.port,
+        password: this.options.password || undefined,
+        db: this.options.db || 0,
+        retryStrategy: this.createRetryStrategy(),
+        maxRetriesPerRequest: 3,
+        enableReadyCheck: true,
+        lazyConnect: false,
+      };
+
+      // Enable TLS if configured
+      if (this.options.tls) {
+        connectionOptions.tls = { rejectUnauthorized: false };
+      }
+
+      this.client = new Redis(connectionOptions);
+    }
 
     this.client.on('error', (err) => {
       this.logger.error(`Redis error: ${err.message}`);
@@ -43,6 +72,22 @@ export class RedisService implements OnModuleInit, OnModuleDestroy {
     this.client.on('connect', () => {
       this.logger.log('Redis connected');
     });
+
+    this.client.on('ready', () => {
+      this.logger.log('Redis ready');
+    });
+  }
+
+  private createRetryStrategy() {
+    return (times: number) => {
+      if (times > 10) {
+        this.logger.error('Redis connection failed after 10 retries');
+        return null;
+      }
+      const delay = Math.min(times * 200, 3000);
+      this.logger.warn(`Redis retry attempt ${times}, waiting ${delay}ms`);
+      return delay;
+    };
   }
 
   async onModuleDestroy() {
