@@ -67,6 +67,10 @@ import { HealthModule } from '@common/health';
           autoLoadEntities: true,
           synchronize: false, // NEVER use synchronize in production
 
+          // Connection retry (don't block app startup)
+          retryAttempts: 10,
+          retryDelay: 3000, // 3 seconds between retries
+
           // Connection Pooling
           extra: {
             max: configService.get<number>('database.poolSize', 10),

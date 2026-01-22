@@ -4,6 +4,8 @@ import { config } from 'dotenv';
 // Load environment variables
 config();
 
+const isProduction = process.env.NODE_ENV === 'production';
+
 function parseDatabaseUrl(url: string | undefined) {
   if (!url) {
     throw new Error('DATABASE_URL is not defined');
@@ -38,9 +40,13 @@ export const AppDataSource = new DataSource({
     rejectUnauthorized: false,
   },
 
-  // Entity and Migration Paths
-  entities: ['src/**/*.entity.ts'],
-  migrations: ['src/migrations/*.ts'],
+  // Entity and Migration Paths - use .js in production, .ts in development
+  entities: isProduction
+    ? ['dist/**/*.entity.js']
+    : ['src/**/*.entity.ts'],
+  migrations: isProduction
+    ? ['dist/migrations/*.js']
+    : ['src/migrations/*.ts'],
 
   // Logging
   logging: ['error', 'warn', 'migration'],

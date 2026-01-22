@@ -1,4 +1,4 @@
-import { Controller, Get, HttpStatus, Res } from '@nestjs/common';
+import { Controller, Get, HttpStatus, Res, Optional } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiResponse } from '@nestjs/swagger';
 import { InjectDataSource } from '@nestjs/typeorm';
 import { DataSource } from 'typeorm';
@@ -23,9 +23,11 @@ export class HealthController {
   private readonly startTime = Date.now();
 
   constructor(
+    @Optional()
     @InjectDataSource()
-    private readonly dataSource: DataSource,
-    private readonly redisService: RedisService,
+    private readonly dataSource: DataSource | null,
+    @Optional()
+    private readonly redisService: RedisService | null,
   ) {}
 
   @Get()
@@ -78,6 +80,9 @@ export class HealthController {
   }
 
   private async checkDatabase(): Promise<{ status: 'up' | 'down'; latencyMs?: number }> {
+    if (!this.dataSource) {
+      return { status: 'down' };
+    }
     const start = Date.now();
     try {
       await this.dataSource.query('SELECT 1');
@@ -91,6 +96,9 @@ export class HealthController {
   }
 
   private async checkRedis(): Promise<{ status: 'up' | 'down'; latencyMs?: number }> {
+    if (!this.redisService) {
+      return { status: 'down' };
+    }
     const start = Date.now();
     try {
       await this.redisService.ping();
