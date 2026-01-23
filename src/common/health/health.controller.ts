@@ -3,6 +3,7 @@ import { ApiTags, ApiOperation, ApiResponse } from '@nestjs/swagger';
 import { InjectDataSource } from '@nestjs/typeorm';
 import { DataSource } from 'typeorm';
 import { RedisService } from '@common/redis/redis.service';
+import { DatabaseReadinessService } from '@common/services';
 import { Public } from '@common/decorators/public.decorator';
 import { Response } from 'express';
 
@@ -14,6 +15,7 @@ interface HealthStatus {
   checks: {
     database: { status: 'up' | 'down'; latencyMs?: number };
     redis: { status: 'up' | 'down'; latencyMs?: number };
+    schema: { status: 'up' | 'down'; ready: boolean };
   };
 }
 
@@ -28,6 +30,8 @@ export class HealthController {
     private readonly dataSource: DataSource | null,
     @Optional()
     private readonly redisService: RedisService | null,
+    @Optional()
+    private readonly databaseReadiness: DatabaseReadinessService | null,
   ) {}
 
   @Get()
@@ -39,9 +43,13 @@ export class HealthController {
     const checks = {
       database: await this.checkDatabase(),
       redis: await this.checkRedis(),
+      schema: this.checkSchema(),
     };
 
-    const isHealthy = checks.database.status === 'up' && checks.redis.status === 'up';
+    const isHealthy =
+      checks.database.status === 'up' &&
+      checks.redis.status === 'up' &&
+      checks.schema.status === 'up';
 
     const response: HealthStatus = {
       status: isHealthy ? 'healthy' : 'unhealthy',
@@ -69,11 +77,14 @@ export class HealthController {
   @ApiResponse({ status: 503, description: 'Service is not ready' })
   async ready(@Res() res: Response): Promise<void> {
     const dbCheck = await this.checkDatabase();
-    const isReady = dbCheck.status === 'up';
+    const schemaCheck = this.checkSchema();
+    const isReady = dbCheck.status === 'up' && schemaCheck.ready;
 
     const response = {
       status: isReady ? 'ok' : 'unavailable',
       ready: isReady,
+      database: dbCheck.status,
+      schema: schemaCheck.ready,
     };
 
     res.status(isReady ? HttpStatus.OK : HttpStatus.SERVICE_UNAVAILABLE).json(response);
@@ -109,5 +120,16 @@ export class HealthController {
     } catch {
       return { status: 'down' };
     }
+  }
+
+  private checkSchema(): { status: 'up' | 'down'; ready: boolean } {
+    if (!this.databaseReadiness) {
+      return { status: 'down', ready: false };
+    }
+    const ready = this.databaseReadiness.isReady;
+    return {
+      status: ready ? 'up' : 'down',
+      ready,
+    };
   }
 }

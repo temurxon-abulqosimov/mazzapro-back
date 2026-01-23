@@ -27,7 +27,7 @@ import { MediaModule } from '@modules/media/media.module';
 import { AdminModule } from '@modules/admin/admin.module';
 import { RedisModule } from '@common/redis/redis.module';
 import { HealthModule } from '@common/health';
-import { DatabaseReadinessService } from '@common/services';
+import { CommonModule } from '@common/common.module';
 
 @Module({
   imports: [
@@ -112,6 +112,9 @@ import { DatabaseReadinessService } from '@common/services';
     // Health Check
     HealthModule,
 
+    // Common infrastructure services (global)
+    CommonModule,
+
     // Feature Modules
     IdentityModule,
     MarketModule,
@@ -129,9 +132,6 @@ import { DatabaseReadinessService } from '@common/services';
       provide: APP_GUARD,
       useClass: ThrottlerGuard,
     },
-    // Database readiness tracking for schedulers
-    DatabaseReadinessService,
   ],
-  exports: [DatabaseReadinessService],
 })
 export class AppModule {}
