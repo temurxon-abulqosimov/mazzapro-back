@@ -111,11 +111,13 @@ async function bootstrap() {
     defaultVersion: '1',
   });
 
-  // CORS
-  const corsOrigins = configService.get<string>('CORS_ORIGINS', '').split(',');
+  // CORS - Allow all origins without restrictions
   app.enableCors({
-    origin: corsOrigins.length > 0 ? corsOrigins : true,
-    credentials: true,
+    origin: true, // Allow all origins
+    credentials: true, // Allow credentials (cookies, authorization headers, etc.)
+    methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'], // Allow all common HTTP methods
+    allowedHeaders: '*', // Allow all headers
+    exposedHeaders: '*', // Expose all headers
   });
 
   // Global Pipes
