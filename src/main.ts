@@ -140,37 +140,36 @@ async function bootstrap() {
   );
 
   // Swagger Documentation
-  if (configService.get<string>('NODE_ENV') !== 'production') {
-    const swaggerConfig = new DocumentBuilder()
-      .setTitle('MAZZA API')
-      .setDescription('Location-based food waste marketplace API')
-      .setVersion('1.0')
-      .addBearerAuth(
-        {
-          type: 'http',
-          scheme: 'bearer',
-          bearerFormat: 'JWT',
-          name: 'JWT',
-          description: 'Enter JWT token',
-          in: 'header',
-        },
-        'JWT-auth',
-      )
-      .addTag('Auth', 'Authentication endpoints')
-      .addTag('Discovery', 'Product and store discovery')
-      .addTag('Products', 'Product management')
-      .addTag('Bookings', 'Booking and order management')
-      .addTag('Favorites', 'User favorites')
-      .addTag('Notifications', 'User notifications')
-      .addTag('Users', 'User profile management')
-      .addTag('Seller', 'Seller dashboard and product management')
-      .addTag('Admin', 'Admin dashboard and management')
-      .addTag('Media', 'File upload and media management')
-      .build();
+  // Enabled for all environments (including production)
+  const swaggerConfig = new DocumentBuilder()
+    .setTitle('MAZZA API')
+    .setDescription('Location-based food waste marketplace API')
+    .setVersion('1.0')
+    .addBearerAuth(
+      {
+        type: 'http',
+        scheme: 'bearer',
+        bearerFormat: 'JWT',
+        name: 'JWT',
+        description: 'Enter JWT token',
+        in: 'header',
+      },
+      'JWT-auth',
+    )
+    .addTag('Auth', 'Authentication endpoints')
+    .addTag('Discovery', 'Product and store discovery')
+    .addTag('Products', 'Product management')
+    .addTag('Bookings', 'Booking and order management')
+    .addTag('Favorites', 'User favorites')
+    .addTag('Notifications', 'User notifications')
+    .addTag('Users', 'User profile management')
+    .addTag('Seller', 'Seller dashboard and product management')
+    .addTag('Admin', 'Admin dashboard and management')
+    .addTag('Media', 'File upload and media management')
+    .build();
 
-    const document = SwaggerModule.createDocument(app, swaggerConfig);
-    SwaggerModule.setup('docs', app, document);
-  }
+  const document = SwaggerModule.createDocument(app, swaggerConfig);
+  SwaggerModule.setup('docs', app, document);
 
   // Use process.env.PORT directly for Railway compatibility
   // Railway injects PORT dynamically
@@ -181,9 +180,7 @@ async function bootstrap() {
 
   console.log(`🚀 MAZZA API running on port ${port}`);
   console.log(`📚 Environment: ${process.env.NODE_ENV || 'development'}`);
-  if (process.env.NODE_ENV !== 'production') {
-    console.log(`📚 API Documentation: http://localhost:${port}/docs`);
-  }
+  console.log(`📚 API Documentation: http://localhost:${port}/docs`);
 }
 
 bootstrap().catch((err) => {
