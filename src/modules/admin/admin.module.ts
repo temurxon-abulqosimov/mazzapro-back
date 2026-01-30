@@ -11,10 +11,11 @@ import {
 
 // Presentation
 import { AdminController } from './presentation/controllers';
+import { AdminSeedController } from './presentation/controllers/admin-seed.controller';
 
 @Module({
   imports: [],
-  controllers: [AdminController],
+  controllers: [AdminController, AdminSeedController],
   providers: [
     // Placeholders for cross-module dependencies
     // These should be provided by importing respective modules

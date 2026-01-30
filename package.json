@@ -29,7 +29,8 @@
     "migration:run:prod": "node ./node_modules/typeorm/cli.js migration:run -d dist/data-source.js",
     "migration:revert": "npm run typeorm -- migration:revert -d src/data-source.ts",
     "migration:revert:prod": "node ./node_modules/typeorm/cli.js migration:revert -d dist/data-source.js",
-    "migration:show": "npm run typeorm -- migration:show -d src/data-source.ts"
+    "migration:show": "npm run typeorm -- migration:show -d src/data-source.ts",
+    "seed:mock": "ts-node -r tsconfig-paths/register src/seed-mock-data.ts"
   },
   "dependencies": {
     "@nestjs/common": "^10.3.0",
