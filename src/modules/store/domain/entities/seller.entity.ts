@@ -40,6 +40,21 @@ export class Seller {
   @Column({ name: 'business_name' })
   businessName: string;
 
+  @Column({ type: 'text', nullable: true })
+  description: string | null;
+
+  @Column({ nullable: true })
+  address: string | null;
+
+  @Column({ nullable: true })
+  city: string | null;
+
+  @Column({ type: 'decimal', precision: 10, scale: 7, nullable: true })
+  lat: number | null;
+
+  @Column({ type: 'decimal', precision: 10, scale: 7, nullable: true })
+  lng: number | null;
+
   @Column({ name: 'business_phone', type: 'varchar', length: 50, nullable: true })
   businessPhone: string | null;
 

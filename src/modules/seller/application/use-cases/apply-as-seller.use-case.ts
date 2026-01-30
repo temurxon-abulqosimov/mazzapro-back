@@ -32,13 +32,14 @@ export class ApplyAsSellerUseCase {
     const seller = new Seller();
     seller.userId = userId;
     seller.businessName = dto.businessName;
-    seller.businessPhone = dto.phoneNumber;
+    seller.businessPhone = dto.phone || null;
+    seller.description = dto.description;
+    seller.address = dto.address;
+    seller.city = dto.city;
+    seller.lat = dto.lat;
+    seller.lng = dto.lng;
     seller.status = SellerStatus.PENDING_REVIEW;
     seller.appliedAt = new Date();
-
-    // Note: businessType and description from the DTO are not stored in the entity
-    // You may want to add these fields to the Seller entity or create a separate table
-    // For now, we're just using the required fields
 
     return await this.sellerRepository.save(seller);
   }
