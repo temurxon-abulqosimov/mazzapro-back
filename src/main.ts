@@ -98,7 +98,7 @@ async function bootstrap() {
   const configService = app.get(ConfigService);
 
   // API Versioning - exclude health endpoints from prefix using RouteInfo
-  const apiPrefix = configService.get<string>('API_PREFIX', 'api/v1');
+  const apiPrefix = configService.get<string>('API_PREFIX', 'api');
   app.setGlobalPrefix(apiPrefix, {
     exclude: [
       { path: 'health', method: RequestMethod.GET },
