@@ -30,7 +30,7 @@ export class TypeOrmFavoriteRepository implements IFavoriteRepository {
       .createQueryBuilder('favorite')
       .leftJoinAndSelect('favorite.store', 'store')
       .where('favorite.user_id = :userId', { userId })
-      .orderBy('favorite.created_at', 'DESC');
+      .orderBy('favorite.createdAt', 'DESC');
 
     if (cursor) {
       const decoded = decodeCursor(cursor);
@@ -40,7 +40,7 @@ export class TypeOrmFavoriteRepository implements IFavoriteRepository {
           select: ['createdAt'],
         });
         if (cursorFavorite) {
-          qb.andWhere('favorite.created_at < :cursorDate', {
+          qb.andWhere('favorite.createdAt < :cursorDate', {
             cursorDate: cursorFavorite.createdAt,
           });
         }

@@ -25,6 +25,7 @@ import { NotificationModule } from '@modules/notification/notification.module';
 import { FavoriteModule } from '@modules/favorite/favorite.module';
 import { MediaModule } from '@modules/media/media.module';
 import { AdminModule } from '@modules/admin/admin.module';
+import { SellerModule } from '@modules/seller/seller.module';
 import { RedisModule } from '@common/redis/redis.module';
 import { HealthModule } from '@common/health';
 import { CommonModule } from '@common/common.module';
@@ -126,6 +127,7 @@ import { CommonModule } from '@common/common.module';
     FavoriteModule,
     MediaModule,
     AdminModule,
+    SellerModule,
   ],
   providers: [
     {
