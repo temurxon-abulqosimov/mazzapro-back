@@ -66,6 +66,69 @@ async function runMigrations(): Promise<boolean> {
   }
 }
 
+async function seedDefaultMarket(): Promise<void> {
+  console.log('=== Checking Default Market ===');
+
+  try {
+    // Initialize the data source
+    if (!AppDataSource.isInitialized) {
+      console.log('Initializing database connection for seeding...');
+      await AppDataSource.initialize();
+      console.log('Database connection established');
+    }
+
+    // Check if any markets exist
+    const marketCount = await AppDataSource.query(
+      'SELECT COUNT(*) as count FROM markets',
+    );
+    const count = parseInt(marketCount[0].count);
+
+    if (count === 0) {
+      console.log('No markets found. Creating default market...');
+
+      // Create default market for New York area
+      await AppDataSource.query(`
+        INSERT INTO markets (
+          id,
+          name,
+          code,
+          timezone,
+          currency,
+          is_active,
+          created_at
+        ) VALUES (
+          '550e8400-e29b-41d4-a716-446655440000',
+          'New York City',
+          'nyc',
+          'America/New_York',
+          'USD',
+          true,
+          NOW()
+        )
+      `);
+
+      console.log('✅ Default market created successfully');
+    } else {
+      console.log(`✅ Markets already exist (${count} found)`);
+    }
+
+    // Close the standalone connection
+    await AppDataSource.destroy();
+    console.log('Seeding connection closed');
+  } catch (error) {
+    console.error('❌ Seeding failed:', error instanceof Error ? error.message : error);
+
+    // Try to close connection if it was opened
+    try {
+      if (AppDataSource.isInitialized) {
+        await AppDataSource.destroy();
+      }
+    } catch {
+      // Ignore cleanup errors
+    }
+  }
+}
+
 async function bootstrap() {
   console.log('=== Starting NestJS application ===');
   console.log(`PORT: ${process.env.PORT || '(not set, using default)'}`);
@@ -86,6 +149,9 @@ async function bootstrap() {
     // Mark database as ready only after successful migrations
     isDatabaseReady = true;
     console.log('✅ Database is ready');
+
+    // Seed default market if none exist
+    await seedDefaultMarket();
   }
 
   const app = await NestFactory.create(AppModule, {
