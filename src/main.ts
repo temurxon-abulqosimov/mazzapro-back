@@ -91,18 +91,28 @@ async function seedDefaultMarket(): Promise<void> {
         INSERT INTO markets (
           id,
           name,
-          code,
+          slug,
           timezone,
           currency,
+          currency_symbol,
+          center_lat,
+          center_lng,
+          default_radius_km,
           is_active,
-          created_at
+          created_at,
+          updated_at
         ) VALUES (
           '550e8400-e29b-41d4-a716-446655440000',
           'New York City',
-          'nyc',
+          'new-york-city',
           'America/New_York',
           'USD',
+          '$',
+          40.7128,
+          -74.0060,
+          10.00,
           true,
+          NOW(),
           NOW()
         )
       `);
