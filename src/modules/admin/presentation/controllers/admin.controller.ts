@@ -24,6 +24,7 @@ import {
   ProcessSellerApplicationDto,
   GetPendingSellersDto,
   AdminDashboardStatsDto,
+  SellerApplicationAction,
 } from '../../application/dto';
 import {
   GetPendingSellersUseCase,
@@ -67,7 +68,7 @@ export class AdminController {
   async approveSeller(
     @Param('id', ParseUUIDPipe) sellerId: string,
   ) {
-    return this.processSellerApplicationUseCase.execute(sellerId, 'approve');
+    return this.processSellerApplicationUseCase.execute(sellerId, SellerApplicationAction.APPROVE);
   }
 
   @Post('sellers/:id/reject')
@@ -80,6 +81,6 @@ export class AdminController {
     @Param('id', ParseUUIDPipe) sellerId: string,
     @Body() dto: { reason: string },
   ) {
-    return this.processSellerApplicationUseCase.execute(sellerId, 'reject', dto.reason);
+    return this.processSellerApplicationUseCase.execute(sellerId, SellerApplicationAction.REJECT, dto.reason);
   }
 }
