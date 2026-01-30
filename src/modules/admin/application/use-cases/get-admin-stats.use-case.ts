@@ -31,7 +31,14 @@ export class GetAdminStatsUseCase {
     ]);
 
     return {
+      // Primary fields matching frontend expectations
       totalUsers,
+      activeSellers: totalSellers,
+      pendingSellers: pendingSellerApplications,
+      totalProducts: activeProducts,
+      totalOrders: bookingStats.total,
+
+      // Legacy fields for backward compatibility
       totalSellers,
       pendingSellerApplications,
       totalStores,
@@ -53,14 +60,14 @@ export class GetAdminStatsUseCase {
 
   private async countSellers(): Promise<number> {
     const result = await this.dataSource.query(
-      "SELECT COUNT(*) as count FROM sellers WHERE status = 'ACTIVE'",
+      "SELECT COUNT(*) as count FROM sellers WHERE status = 'APPROVED'",
     );
     return parseInt(result[0]?.count || '0', 10);
   }
 
   private async countPendingSellers(): Promise<number> {
     const result = await this.dataSource.query(
-      "SELECT COUNT(*) as count FROM sellers WHERE status = 'PENDING'",
+      "SELECT COUNT(*) as count FROM sellers WHERE status = 'PENDING_REVIEW'",
     );
     return parseInt(result[0]?.count || '0', 10);
   }

@@ -42,6 +42,12 @@ export class TypeOrmSellerRepository implements ISellerRepository {
     });
   }
 
+  async countPendingApplications(): Promise<number> {
+    return this.repository.count({
+      where: { status: SellerStatus.PENDING_REVIEW },
+    });
+  }
+
   async save(seller: Seller): Promise<Seller> {
     return this.repository.save(seller);
   }

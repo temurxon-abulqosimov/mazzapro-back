@@ -43,10 +43,10 @@ export class AdminController {
     private readonly getAdminStatsUseCase: GetAdminStatsUseCase,
   ) {}
 
-  @Get('dashboard/stats')
+  @Get('stats')
   @ApiOperation({ summary: 'Get admin dashboard statistics' })
   @ApiResponse({ status: 200, description: 'Dashboard stats' })
-  async getDashboardStats(): Promise<AdminDashboardStatsDto> {
+  async getStats(): Promise<AdminDashboardStatsDto> {
     return this.getAdminStatsUseCase.execute();
   }
 
@@ -59,20 +59,27 @@ export class AdminController {
     return this.getPendingSellersUseCase.execute(dto.limit || 20, dto.cursor);
   }
 
-  @Post('sellers/:id/process')
+  @Post('sellers/:id/approve')
   @HttpCode(HttpStatus.OK)
-  @ApiOperation({ summary: 'Approve or reject seller application' })
-  @ApiResponse({ status: 200, description: 'Application processed' })
+  @ApiOperation({ summary: 'Approve seller application' })
+  @ApiResponse({ status: 200, description: 'Seller approved' })
   @ApiResponse({ status: 404, description: 'Seller not found' })
-  @ApiResponse({ status: 400, description: 'Invalid action or missing reason' })
-  async processSellerApplication(
+  async approveSeller(
     @Param('id', ParseUUIDPipe) sellerId: string,
-    @Body() dto: ProcessSellerApplicationDto,
   ) {
-    return this.processSellerApplicationUseCase.execute(
-      sellerId,
-      dto.action,
-      dto.reason,
-    );
+    return this.processSellerApplicationUseCase.execute(sellerId, 'approve');
+  }
+
+  @Post('sellers/:id/reject')
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({ summary: 'Reject seller application' })
+  @ApiResponse({ status: 200, description: 'Seller rejected' })
+  @ApiResponse({ status: 404, description: 'Seller not found' })
+  @ApiResponse({ status: 400, description: 'Missing rejection reason' })
+  async rejectSeller(
+    @Param('id', ParseUUIDPipe) sellerId: string,
+    @Body() dto: { reason: string },
+  ) {
+    return this.processSellerApplicationUseCase.execute(sellerId, 'reject', dto.reason);
   }
 }

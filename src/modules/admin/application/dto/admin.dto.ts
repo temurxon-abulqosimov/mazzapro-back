@@ -64,31 +64,44 @@ export class AdminDashboardStatsDto {
   totalUsers: number;
 
   @ApiProperty()
-  totalSellers: number;
+  activeSellers: number;
 
   @ApiProperty()
-  pendingSellerApplications: number;
+  pendingSellers: number;
 
   @ApiProperty()
-  totalStores: number;
+  totalProducts: number;
 
   @ApiProperty()
-  activeProducts: number;
+  totalOrders: number;
 
-  @ApiProperty()
-  totalBookings: number;
+  // Legacy fields
+  @ApiProperty({ required: false })
+  totalSellers?: number;
 
-  @ApiProperty()
-  completedBookings: number;
+  @ApiProperty({ required: false })
+  pendingSellerApplications?: number;
 
-  @ApiProperty()
-  totalRevenue: number;
+  @ApiProperty({ required: false })
+  totalStores?: number;
 
-  @ApiProperty()
-  mealsSaved: number;
+  @ApiProperty({ required: false })
+  activeProducts?: number;
 
-  @ApiProperty()
-  co2Saved: number;
+  @ApiProperty({ required: false })
+  totalBookings?: number;
+
+  @ApiProperty({ required: false })
+  completedBookings?: number;
+
+  @ApiProperty({ required: false })
+  totalRevenue?: number;
+
+  @ApiProperty({ required: false })
+  mealsSaved?: number;
+
+  @ApiProperty({ required: false })
+  co2Saved?: number;
 }
 
 export class AdminBookingListDto {
