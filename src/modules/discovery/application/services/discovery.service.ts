@@ -90,7 +90,7 @@ export class DiscoveryService {
     // Sorting
     switch (sort) {
       case SortOption.DISTANCE:
-        query.orderBy(distanceFormula, 'ASC');
+        query.orderBy('distance', 'ASC');
         break;
       case SortOption.PRICE_ASC:
         query.orderBy('product.discounted_price', 'ASC');
@@ -101,7 +101,7 @@ export class DiscoveryService {
       case SortOption.RECOMMENDED:
       default:
         // Recommended: combination of distance, rating, and freshness
-        query.orderBy(distanceFormula, 'ASC').addOrderBy('store.rating', 'DESC');
+        query.orderBy('distance', 'ASC').addOrderBy('store.rating', 'DESC');
         break;
     }
 
