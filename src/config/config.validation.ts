@@ -110,7 +110,9 @@ export function validateConfig(): ValidationResult {
   };
 }
 
-export function logValidationResult(result: ValidationResult): void {
+export function logValidationResult(result: ValidationResult, options: { fatal?: boolean } = {}): void {
+  const { fatal = false } = options;
+
   if (result.warnings.length > 0) {
     console.warn('⚠️  Configuration warnings:');
     result.warnings.forEach((w) => console.warn(`   - ${w}`));
@@ -119,7 +121,15 @@ export function logValidationResult(result: ValidationResult): void {
   if (!result.valid) {
     console.error('❌ Configuration errors:');
     result.errors.forEach((e) => console.error(`   - ${e}`));
-    console.error('\nApplication cannot start with invalid configuration.');
-    process.exit(1);
+
+    if (fatal) {
+      console.error('\n🛑 Application cannot start with invalid configuration.');
+      console.error('Set missing environment variables and restart.');
+      process.exit(1);
+    } else {
+      console.error('\n⚠️  WARNING: Running with invalid configuration!');
+      console.error('⚠️  Some features may not work correctly.');
+      console.error('⚠️  Set missing environment variables ASAP.\n');
+    }
   }
 }

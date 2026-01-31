@@ -66,8 +66,14 @@ export class HealthController {
   @Public()
   @ApiOperation({ summary: 'Liveness probe - checks if the service is running' })
   @ApiResponse({ status: 200, description: 'Service is alive' })
-  live(): { status: string } {
-    return { status: 'ok' };
+  live(): { status: string; timestamp: string; uptime: number } {
+    // This endpoint MUST always return 200 OK if the process is running
+    // Used by Railway healthcheck - do not add dependencies here
+    return {
+      status: 'ok',
+      timestamp: new Date().toISOString(),
+      uptime: Math.floor((Date.now() - this.startTime) / 1000),
+    };
   }
 
   @Get('ready')

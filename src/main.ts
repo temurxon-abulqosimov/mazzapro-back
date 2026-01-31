@@ -140,31 +140,40 @@ async function seedDefaultMarket(): Promise<void> {
 }
 
 async function bootstrap() {
-  console.log('=== Starting NestJS application ===');
-  console.log(`PORT: ${process.env.PORT || '(not set, using default)'}`);
-  console.log(`NODE_ENV: ${process.env.NODE_ENV || 'development'}`);
+  console.log('\n========================================');
+  console.log('🚀 Starting MAZZA Backend');
+  console.log('========================================');
+  console.log(`📍 Environment: ${process.env.NODE_ENV || 'development'}`);
+  console.log(`🔌 Port: ${process.env.PORT || '3000 (default)'}`);
+  console.log(`🕐 Timestamp: ${new Date().toISOString()}`);
+  console.log('========================================\n');
 
-  // Validate configuration before proceeding
+  // Validate configuration - NON-FATAL in production to allow startup
+  console.log('🔍 Validating configuration...');
   const validationResult = validateConfig();
-  logValidationResult(validationResult);
+  const isProduction = process.env.NODE_ENV === 'production';
 
-  // TEMPORARILY DISABLED: Run migrations manually first
+  // In production, log errors but don't exit - allow app to start for health checks
+  // In development, be strict
+  logValidationResult(validationResult, { fatal: !isProduction });
+
   // Run migrations BEFORE creating the NestJS app
-  // This ensures database schema exists before any module initializes
-  console.log('⚠️  Auto-migrations temporarily disabled - run manually if needed');
+  console.log('\n📦 Running database migrations...');
+  const migrationsSuccessful = await runMigrations();
 
-  // const migrationsSuccessful = await runMigrations();
-  // if (!migrationsSuccessful) {
-  //   console.warn('⚠️  Migrations failed - app will start but database may not be ready');
-  //   console.warn('⚠️  Schedulers and DB queries may fail until migrations complete');
-  // } else {
-  //   isDatabaseReady = true;
-  //   console.log('✅ Database is ready');
-  //   await seedDefaultMarket();
-  // }
+  if (!migrationsSuccessful) {
+    console.warn('\n⚠️  Migration execution failed or incomplete');
+    console.warn('⚠️  App will start in degraded mode');
+    console.warn('⚠️  Database-dependent features may not work\n');
+    isDatabaseReady = false;
+  } else {
+    isDatabaseReady = true;
+    console.log('✅ Migrations completed successfully\n');
 
-  // Assume database is ready (migrations run manually)
-  isDatabaseReady = true;
+    // Seed default market if none exist
+    console.log('🌱 Checking for default market...');
+    await seedDefaultMarket();
+  }
 
   const app = await NestFactory.create(AppModule, {
     logger: ['error', 'warn', 'log'],
@@ -258,12 +267,23 @@ async function bootstrap() {
   // Listen on 0.0.0.0 to accept connections from outside the container
   await app.listen(port, '0.0.0.0');
 
-  console.log(`🚀 MAZZA API running on port ${port}`);
-  console.log(`📚 Environment: ${process.env.NODE_ENV || 'development'}`);
-  console.log(`📚 API Documentation: http://localhost:${port}/docs`);
+  console.log('\n========================================');
+  console.log('✅ MAZZA API STARTED SUCCESSFULLY');
+  console.log('========================================');
+  console.log(`🚀 Server listening on: http://0.0.0.0:${port}`);
+  console.log(`📚 API Docs: http://localhost:${port}/docs`);
+  console.log(`💚 Health Check: http://localhost:${port}/health`);
+  console.log(`📊 Environment: ${process.env.NODE_ENV || 'development'}`);
+  console.log(`🗄️  Database: ${isDatabaseReady ? 'Ready' : 'Degraded Mode'}`);
+  console.log('========================================\n');
 }
 
 bootstrap().catch((err) => {
-  console.error('Failed to start application:', err);
+  console.error('\n========================================');
+  console.error('❌ FATAL: Application startup failed');
+  console.error('========================================');
+  console.error('Error details:', err);
+  console.error('Stack trace:', err.stack);
+  console.error('========================================\n');
   process.exit(1);
 });
