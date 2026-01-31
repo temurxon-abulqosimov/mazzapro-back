@@ -1,7 +1,10 @@
 import { Injectable, Inject, Logger } from '@nestjs/common';
+import { InjectRepository } from '@nestjs/typeorm';
+import { Repository } from 'typeorm';
 import { NotFoundException, ValidationException } from '@common/exceptions/domain.exception';
 import { SellerApplicationAction } from '../dto';
 import { ISellerRepository, SELLER_REPOSITORY } from './get-pending-sellers.use-case';
+import { User } from '@modules/identity/domain/entities/user.entity';
 
 // Notification use case interface
 export interface ISendNotificationUseCase {
@@ -25,6 +28,8 @@ export class ProcessSellerApplicationUseCase {
     private readonly sellerRepository: ISellerRepository,
     @Inject(SEND_NOTIFICATION_USE_CASE)
     private readonly sendNotificationUseCase: ISendNotificationUseCase,
+    @InjectRepository(User)
+    private readonly userRepository: Repository<User>,
   ) {}
 
   async execute(
@@ -47,6 +52,14 @@ export class ProcessSellerApplicationUseCase {
       seller.approve(adminUserId);
       await this.sellerRepository.save(seller);
 
+      // Promote user to SELLER role
+      const user = await this.userRepository.findOne({ where: { id: seller.userId } });
+      if (!user) {
+        throw new NotFoundException(`User with id ${seller.userId} not found`);
+      }
+      user.promoteToSeller();
+      await this.userRepository.save(user);
+
       // Send approval notification
       await this.sendNotificationUseCase.execute({
         userId: seller.userId,
@@ -56,7 +69,7 @@ export class ProcessSellerApplicationUseCase {
         sendPush: true,
       });
 
-      this.logger.log(`Seller ${sellerId} approved by admin ${adminUserId}`);
+      this.logger.log(`Seller ${sellerId} approved by admin ${adminUserId} - User ${user.id} promoted to SELLER role`);
     } else {
       if (!reason) {
         throw new ValidationException('Rejection reason is required');
