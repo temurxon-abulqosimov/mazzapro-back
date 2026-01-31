@@ -9,6 +9,7 @@ import {
   HttpCode,
   HttpStatus,
   ParseUUIDPipe,
+  Request,
 } from '@nestjs/common';
 import {
   ApiTags,
@@ -67,8 +68,10 @@ export class AdminController {
   @ApiResponse({ status: 404, description: 'Seller not found' })
   async approveSeller(
     @Param('id', ParseUUIDPipe) sellerId: string,
+    @Request() req: any,
   ) {
-    return this.processSellerApplicationUseCase.execute(sellerId, SellerApplicationAction.APPROVE);
+    const adminUserId = req.user.id;
+    return this.processSellerApplicationUseCase.execute(sellerId, SellerApplicationAction.APPROVE, adminUserId);
   }
 
   @Post('sellers/:id/reject')
@@ -80,7 +83,9 @@ export class AdminController {
   async rejectSeller(
     @Param('id', ParseUUIDPipe) sellerId: string,
     @Body() dto: { reason: string },
+    @Request() req: any,
   ) {
-    return this.processSellerApplicationUseCase.execute(sellerId, SellerApplicationAction.REJECT, dto.reason);
+    const adminUserId = req.user.id;
+    return this.processSellerApplicationUseCase.execute(sellerId, SellerApplicationAction.REJECT, adminUserId, dto.reason);
   }
 }

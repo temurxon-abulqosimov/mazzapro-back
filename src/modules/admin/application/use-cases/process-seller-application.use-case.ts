@@ -30,6 +30,7 @@ export class ProcessSellerApplicationUseCase {
   async execute(
     sellerId: string,
     action: SellerApplicationAction,
+    adminUserId: string,
     reason?: string,
   ): Promise<{ success: boolean; newStatus: string }> {
     const seller = await this.sellerRepository.findById(sellerId);
@@ -37,13 +38,13 @@ export class ProcessSellerApplicationUseCase {
       throw new NotFoundException(`Seller with id ${sellerId} not found`);
     }
 
-    if (seller.status !== 'PENDING') {
-      throw new ValidationException(`Seller is not pending. Current status: ${seller.status}`);
+    if (!seller.isPending()) {
+      throw new ValidationException(`Seller is not pending review. Current status: ${seller.status}`);
     }
 
     if (action === SellerApplicationAction.APPROVE) {
-      seller.status = 'ACTIVE';
-      seller.approvedAt = new Date();
+      // Use domain method for approval
+      seller.approve(adminUserId);
       await this.sellerRepository.save(seller);
 
       // Send approval notification
@@ -55,15 +56,14 @@ export class ProcessSellerApplicationUseCase {
         sendPush: true,
       });
 
-      this.logger.log(`Seller ${sellerId} approved`);
+      this.logger.log(`Seller ${sellerId} approved by admin ${adminUserId}`);
     } else {
       if (!reason) {
         throw new ValidationException('Rejection reason is required');
       }
 
-      seller.status = 'REJECTED';
-      seller.rejectionReason = reason;
-      seller.rejectedAt = new Date();
+      // Use domain method for rejection
+      seller.reject(reason);
       await this.sellerRepository.save(seller);
 
       // Send rejection notification
@@ -75,7 +75,7 @@ export class ProcessSellerApplicationUseCase {
         sendPush: true,
       });
 
-      this.logger.log(`Seller ${sellerId} rejected: ${reason}`);
+      this.logger.log(`Seller ${sellerId} rejected by admin ${adminUserId}: ${reason}`);
     }
 
     return {
