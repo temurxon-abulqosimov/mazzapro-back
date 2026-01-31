@@ -61,13 +61,13 @@ export class SellerApplicationDto {
   lng: number;
 
   @ApiProperty({
-    description: 'Business phone number (optional)',
+    description: 'Business phone number',
     example: '+1234567890',
-    required: false,
+    required: true,
   })
   @IsString()
-  @IsOptional()
+  @IsNotEmpty()
   @MinLength(10)
   @MaxLength(20)
-  phone?: string;
+  phone: string;
 }

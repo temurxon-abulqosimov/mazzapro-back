@@ -32,7 +32,7 @@ export class ApplyAsSellerUseCase {
     const seller = new Seller();
     seller.userId = userId;
     seller.businessName = dto.businessName;
-    seller.businessPhone = dto.phone || null;
+    seller.businessPhone = dto.phone;
     seller.description = dto.description;
     seller.address = dto.address;
     seller.city = dto.city;
