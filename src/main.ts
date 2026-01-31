@@ -148,21 +148,23 @@ async function bootstrap() {
   const validationResult = validateConfig();
   logValidationResult(validationResult);
 
+  // TEMPORARILY DISABLED: Run migrations manually first
   // Run migrations BEFORE creating the NestJS app
   // This ensures database schema exists before any module initializes
-  const migrationsSuccessful = await runMigrations();
+  console.log('⚠️  Auto-migrations temporarily disabled - run manually if needed');
 
-  if (!migrationsSuccessful) {
-    console.warn('⚠️  Migrations failed - app will start but database may not be ready');
-    console.warn('⚠️  Schedulers and DB queries may fail until migrations complete');
-  } else {
-    // Mark database as ready only after successful migrations
-    isDatabaseReady = true;
-    console.log('✅ Database is ready');
+  // const migrationsSuccessful = await runMigrations();
+  // if (!migrationsSuccessful) {
+  //   console.warn('⚠️  Migrations failed - app will start but database may not be ready');
+  //   console.warn('⚠️  Schedulers and DB queries may fail until migrations complete');
+  // } else {
+  //   isDatabaseReady = true;
+  //   console.log('✅ Database is ready');
+  //   await seedDefaultMarket();
+  // }
 
-    // Seed default market if none exist
-    await seedDefaultMarket();
-  }
+  // Assume database is ready (migrations run manually)
+  isDatabaseReady = true;
 
   const app = await NestFactory.create(AppModule, {
     logger: ['error', 'warn', 'log'],
