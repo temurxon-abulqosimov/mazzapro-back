@@ -69,14 +69,16 @@ import { CommonModule } from '@common/common.module';
           autoLoadEntities: true,
           synchronize: false, // NEVER use synchronize in production
 
-          // Connection retry (don't block app startup)
-          retryAttempts: 10,
-          retryDelay: 3000, // 3 seconds between retries
+          // Connection retry - CRITICAL FIX: Don't retry on initial connection
+          // This allows the app to start even when DB is unavailable
+          // TypeORM's connection pool will automatically reconnect when DB becomes available
+          retryAttempts: 0, // Fail fast on initial connection, don't block startup
+          retryDelay: 1000,
 
-          // Connection Pooling
+          // Connection Pooling - handles automatic reconnection
           extra: {
             max: configService.get<number>('database.poolSize', 10),
-            min: 2,
+            min: 0, // Allow zero active connections (degraded mode)
             idleTimeoutMillis: 30000,
             connectionTimeoutMillis: 10000,
           },

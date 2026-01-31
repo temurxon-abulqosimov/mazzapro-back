@@ -285,5 +285,20 @@ bootstrap().catch((err) => {
   console.error('Error details:', err);
   console.error('Stack trace:', err.stack);
   console.error('========================================\n');
-  process.exit(1);
+
+  // In production, log but don't exit if it's a database connection error
+  // This allows the container to stay alive for potential recovery
+  const isProduction = process.env.NODE_ENV === 'production';
+  const isDatabaseError = err.message?.includes('ECONNREFUSED') ||
+                          err.message?.includes('database') ||
+                          err.code === 'ECONNREFUSED';
+
+  if (isProduction && isDatabaseError) {
+    console.error('⚠️  Database connection failed but keeping process alive for healthchecks');
+    console.error('⚠️  The app may not function correctly until database is available');
+    console.error('⚠️  Container will remain running to prevent deployment loop\n');
+    // Don't exit - keep process alive for healthcheck endpoints
+  } else {
+    process.exit(1);
+  }
 });
