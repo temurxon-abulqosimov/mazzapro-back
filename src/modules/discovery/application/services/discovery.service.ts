@@ -59,19 +59,18 @@ export class DiscoveryService {
     }
 
     // Build query with Haversine formula for distance
+    const distanceFormula = `(6371 * acos(cos(radians(:lat)) * cos(radians(store.lat)) * cos(radians(store.lng) - radians(:lng)) + sin(radians(:lat)) * sin(radians(store.lat))))`;
+
     const query = this.productRepository
       .createQueryBuilder('product')
       .leftJoinAndSelect('product.store', 'store')
       .leftJoinAndSelect('product.category', 'category')
       .leftJoinAndSelect('product.images', 'images')
-      .addSelect(
-        `(6371 * acos(cos(radians(:lat)) * cos(radians(store.lat)) * cos(radians(store.lng) - radians(:lng)) + sin(radians(:lat)) * sin(radians(store.lat))))`,
-        'distance',
-      )
+      .addSelect(distanceFormula, 'distance')
       .where('product.status = :status', { status: ProductStatus.ACTIVE })
       .andWhere('store.is_active = :isActive', { isActive: true })
       .andWhere('product.expires_at > :now', { now: new Date() })
-      .having('distance <= :radius', { radius })
+      .andWhere(`${distanceFormula} <= :radius`, { radius })
       .setParameter('lat', lat)
       .setParameter('lng', lng);
 
@@ -91,7 +90,7 @@ export class DiscoveryService {
     // Sorting
     switch (sort) {
       case SortOption.DISTANCE:
-        query.orderBy('distance', 'ASC');
+        query.orderBy(distanceFormula, 'ASC');
         break;
       case SortOption.PRICE_ASC:
         query.orderBy('product.discounted_price', 'ASC');
@@ -102,7 +101,7 @@ export class DiscoveryService {
       case SortOption.RECOMMENDED:
       default:
         // Recommended: combination of distance, rating, and freshness
-        query.orderBy('distance', 'ASC').addOrderBy('store.rating', 'DESC');
+        query.orderBy(distanceFormula, 'ASC').addOrderBy('store.rating', 'DESC');
         break;
     }
 
