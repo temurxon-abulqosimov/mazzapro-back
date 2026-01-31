@@ -48,14 +48,14 @@ export class GetPendingSellersUseCase {
     return {
       id: seller.id,
       businessName: seller.businessName,
-      businessType: seller.businessType,
-      contactEmail: seller.contactEmail,
-      contactPhone: seller.contactPhone,
-      address: seller.address,
-      appliedAt: seller.createdAt,
+      businessType: 'General', // Default value since we don't store businessType
+      contactEmail: seller.user?.email || '',
+      contactPhone: seller.businessPhone || '',
+      address: seller.address || '',
+      appliedAt: seller.appliedAt || seller.createdAt,
       user: {
         id: seller.user?.id || seller.userId,
-        name: seller.user?.name || '',
+        name: seller.user?.fullName || seller.user?.name || '',
         email: seller.user?.email || '',
       },
     };

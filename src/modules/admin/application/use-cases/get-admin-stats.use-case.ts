@@ -52,38 +52,63 @@ export class GetAdminStatsUseCase {
   }
 
   private async countUsers(): Promise<number> {
-    const result = await this.dataSource.query(
-      'SELECT COUNT(*) as count FROM users WHERE deleted_at IS NULL',
-    );
-    return parseInt(result[0]?.count || '0', 10);
+    try {
+      const result = await this.dataSource.query(
+        'SELECT COUNT(*) as count FROM users',
+      );
+      return parseInt(result[0]?.count || '0', 10);
+    } catch (error) {
+      console.error('Error counting users:', error);
+      return 0;
+    }
   }
 
   private async countSellers(): Promise<number> {
-    const result = await this.dataSource.query(
-      "SELECT COUNT(*) as count FROM sellers WHERE status = 'APPROVED'",
-    );
-    return parseInt(result[0]?.count || '0', 10);
+    try {
+      const result = await this.dataSource.query(
+        "SELECT COUNT(*) as count FROM sellers WHERE status = 'APPROVED'",
+      );
+      return parseInt(result[0]?.count || '0', 10);
+    } catch (error) {
+      console.error('Error counting sellers:', error);
+      return 0;
+    }
   }
 
   private async countPendingSellers(): Promise<number> {
-    const result = await this.dataSource.query(
-      "SELECT COUNT(*) as count FROM sellers WHERE status = 'PENDING_REVIEW'",
-    );
-    return parseInt(result[0]?.count || '0', 10);
+    try {
+      const result = await this.dataSource.query(
+        "SELECT COUNT(*) as count FROM sellers WHERE status = 'PENDING_REVIEW'",
+      );
+      return parseInt(result[0]?.count || '0', 10);
+    } catch (error) {
+      console.error('Error counting pending sellers:', error);
+      return 0;
+    }
   }
 
   private async countStores(): Promise<number> {
-    const result = await this.dataSource.query(
-      'SELECT COUNT(*) as count FROM stores WHERE is_active = true',
-    );
-    return parseInt(result[0]?.count || '0', 10);
+    try {
+      const result = await this.dataSource.query(
+        'SELECT COUNT(*) as count FROM stores WHERE is_active = true',
+      );
+      return parseInt(result[0]?.count || '0', 10);
+    } catch (error) {
+      console.error('Error counting stores:', error);
+      return 0;
+    }
   }
 
   private async countActiveProducts(): Promise<number> {
-    const result = await this.dataSource.query(
-      "SELECT COUNT(*) as count FROM products WHERE status = 'ACTIVE'",
-    );
-    return parseInt(result[0]?.count || '0', 10);
+    try {
+      const result = await this.dataSource.query(
+        "SELECT COUNT(*) as count FROM products WHERE status = 'ACTIVE'",
+      );
+      return parseInt(result[0]?.count || '0', 10);
+    } catch (error) {
+      console.error('Error counting products:', error);
+      return 0;
+    }
   }
 
   private async getBookingStats(): Promise<{
@@ -91,35 +116,45 @@ export class GetAdminStatsUseCase {
     completed: number;
     revenue: number;
   }> {
-    const result = await this.dataSource.query(`
-      SELECT
-        COUNT(*) as total,
-        COUNT(*) FILTER (WHERE status = 'COMPLETED') as completed,
-        COALESCE(SUM(total_price) FILTER (WHERE status = 'COMPLETED'), 0) as revenue
-      FROM bookings
-    `);
+    try {
+      const result = await this.dataSource.query(`
+        SELECT
+          COUNT(*) as total,
+          COUNT(*) FILTER (WHERE status = 'COMPLETED') as completed,
+          COALESCE(SUM(total_price) FILTER (WHERE status = 'COMPLETED'), 0) as revenue
+        FROM bookings
+      `);
 
-    return {
-      total: parseInt(result[0]?.total || '0', 10),
-      completed: parseInt(result[0]?.completed || '0', 10),
-      revenue: parseFloat(result[0]?.revenue || '0'),
-    };
+      return {
+        total: parseInt(result[0]?.total || '0', 10),
+        completed: parseInt(result[0]?.completed || '0', 10),
+        revenue: parseFloat(result[0]?.revenue || '0'),
+      };
+    } catch (error) {
+      console.error('Error getting booking stats:', error);
+      return { total: 0, completed: 0, revenue: 0 };
+    }
   }
 
   private async getImpactStats(): Promise<{
     mealsSaved: number;
     co2Saved: number;
   }> {
-    const result = await this.dataSource.query(`
-      SELECT
-        COALESCE(SUM(meals_saved), 0) as meals_saved,
-        COALESCE(SUM(co2_saved), 0) as co2_saved
-      FROM users
-    `);
+    try {
+      const result = await this.dataSource.query(`
+        SELECT
+          COALESCE(SUM(meals_saved), 0) as meals_saved,
+          COALESCE(SUM(co2_saved), 0) as co2_saved
+        FROM users
+      `);
 
-    return {
-      mealsSaved: parseInt(result[0]?.meals_saved || '0', 10),
-      co2Saved: parseFloat(result[0]?.co2_saved || '0'),
-    };
+      return {
+        mealsSaved: parseInt(result[0]?.meals_saved || '0', 10),
+        co2Saved: parseFloat(result[0]?.co2_saved || '0'),
+      };
+    } catch (error) {
+      console.error('Error getting impact stats:', error);
+      return { mealsSaved: 0, co2Saved: 0 };
+    }
   }
 }
