@@ -74,12 +74,11 @@ export const AppDataSource = new DataSource({
   ssl: dbConfig.ssl ? { rejectUnauthorized: false } : false,
 
   // Entity and Migration Paths - use .js in production, .ts in development
-  // In production, paths are relative to the dist folder since we run 'node dist/main'
   entities: isProduction
-    ? ['**/*.entity.js']
+    ? ['dist/**/*.entity.js']
     : ['src/**/*.entity.ts'],
   migrations: isProduction
-    ? ['migrations/*.js']
+    ? ['dist/migrations/*.js']
     : ['src/migrations/*.ts'],
 
   // Logging
