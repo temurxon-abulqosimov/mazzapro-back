@@ -1,6 +1,5 @@
 import { DataSource } from 'typeorm';
 import { config } from 'dotenv';
-import * as path from 'path';
 
 // Load environment variables
 config();
@@ -75,14 +74,14 @@ export const AppDataSource = new DataSource({
   ssl: dbConfig.ssl ? { rejectUnauthorized: false } : false,
 
   // Entity and Migration Paths - use .js in production, .ts in development
-  // In production: __dirname is /app/dist, so we use relative paths from there
-  // In development: __dirname is /app/src, so we use relative paths from there
+  // In production: __dirname is /app/dist, entities are in /app/dist/modules/**/*.entity.js
+  // Use string templates for glob patterns (path.join doesn't work with ** wildcards)
   entities: isProduction
-    ? [path.join(__dirname, '**', '*.entity.js')]
-    : [path.join(__dirname, '..', 'src', '**', '*.entity.ts')],
+    ? [`${__dirname}/**/*.entity.js`]
+    : ['src/**/*.entity.ts'],
   migrations: isProduction
-    ? [path.join(__dirname, 'migrations', '*.js')]
-    : [path.join(__dirname, '..', 'src', 'migrations', '*.ts')],
+    ? [`${__dirname}/migrations/*.js`]
+    : ['src/migrations/*.ts'],
 
   // Logging
   logging: ['error', 'warn', 'migration'],
