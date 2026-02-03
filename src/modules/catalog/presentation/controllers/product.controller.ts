@@ -128,14 +128,41 @@ export class SellerProductController {
       products: products.map((p) => ({
         id: p.id,
         name: p.name,
-        imageUrl: p.images?.[0]?.url || null,
-        price: p.discountedPrice,
+        description: p.description,
+        originalPrice: p.originalPrice,
+        discountedPrice: p.discountedPrice,
+        discountPercent: p.discountPercent,
         quantity: p.quantity,
         quantityAvailable: p.quantityAvailable,
-        status: p.status,
         pickupWindow: {
+          start: p.pickupWindowStart,
+          end: p.pickupWindowEnd,
           label: formatTimeRange(p.pickupWindowStart, p.pickupWindowEnd),
+          dateLabel: getDateLabel(p.pickupWindowStart),
         },
+        status: p.status,
+        images: p.images?.map((img) => ({
+          url: img.url,
+          thumbnailUrl: img.thumbnailUrl,
+          position: img.position,
+        })) || [],
+        store: {
+          id: p.store.id,
+          name: p.store.name,
+          rating: Number(p.store.rating),
+          imageUrl: p.store.imageUrl,
+          location: {
+            address: p.store.address,
+            lat: Number(p.store.lat),
+            lng: Number(p.store.lng),
+          },
+        },
+        category: {
+          id: p.category.id,
+          name: p.category.name,
+          slug: p.category.slug,
+        },
+        createdAt: p.createdAt,
       })),
     };
   }
