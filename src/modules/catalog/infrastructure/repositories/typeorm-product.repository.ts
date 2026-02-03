@@ -61,7 +61,7 @@ export class TypeOrmProductRepository implements IProductRepository {
         storeId,
         status: In([ProductStatus.ACTIVE, ProductStatus.SOLD_OUT]),
       },
-      relations: ['images', 'category'],
+      relations: ['images', 'category', 'store'],
       order: { createdAt: 'DESC' },
     });
   }
