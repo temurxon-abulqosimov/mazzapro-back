@@ -29,7 +29,10 @@ import {
   GetSellerDashboardUseCase,
   ToggleStoreStatusUseCase,
 } from '../../application/use-cases';
-import { GetDashboardStatsUseCase } from '@modules/seller/application/use-cases/get-dashboard-stats.use-case';
+import {
+  GetDashboardStatsUseCase,
+  GetLiveOrdersUseCase,
+} from '@modules/seller/application/use-cases';
 
 @ApiTags('Seller')
 @Controller('seller')
@@ -41,6 +44,7 @@ export class SellerController {
     private readonly getSellerDashboardUseCase: GetSellerDashboardUseCase,
     private readonly getDashboardStatsUseCase: GetDashboardStatsUseCase,
     private readonly toggleStoreStatusUseCase: ToggleStoreStatusUseCase,
+    private readonly getLiveOrdersUseCase: GetLiveOrdersUseCase,
   ) {}
 
   @Post('apply')
@@ -96,5 +100,17 @@ export class SellerController {
   ): Promise<StoreStatusResponseDto> {
     const result = await this.toggleStoreStatusUseCase.execute(user.id, dto.isOpen);
     return result;
+  }
+
+  @Get('orders/live')
+  @UseGuards(RolesGuard)
+  @Roles(UserRole.SELLER)
+  @ApiOperation({ summary: 'Get live orders awaiting pickup' })
+  @ApiResponse({ status: 200, description: 'List of live orders' })
+  async getLiveOrders(
+    @CurrentUser() user: AuthenticatedUser,
+  ) {
+    const orders = await this.getLiveOrdersUseCase.execute(user.id);
+    return orders;
   }
 }
