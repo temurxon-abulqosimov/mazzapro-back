@@ -26,6 +26,7 @@ export default () => ({
   },
 
   stripe: {
+    enabled: process.env.STRIPE_ENABLED || 'false', // 'true', 'false', or 'mock'
     secretKey: process.env.STRIPE_SECRET_KEY || '',
     webhookSecret: process.env.STRIPE_WEBHOOK_SECRET || '',
     currency: process.env.STRIPE_CURRENCY || 'usd',

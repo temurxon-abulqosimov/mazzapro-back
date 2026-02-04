@@ -14,6 +14,7 @@ import {
   PAYMENT_SERVICE,
   StripePaymentService,
   NullPaymentService,
+  MockPaymentService,
   QrCodeService,
 } from './infrastructure/services';
 
@@ -61,16 +62,19 @@ import { Product } from '@modules/catalog/domain/entities/product.entity';
       useClass: TypeOrmBookingRepository,
     },
 
-    // Payment Service - conditionally provide real or null implementation
+    // Payment Service - conditionally provide real, mock, or null implementation
     {
       provide: PAYMENT_SERVICE,
       useFactory: (configService: ConfigService) => {
         const logger = new Logger('PaymentServiceFactory');
-        const paymentsEnabled = configService.get<boolean>('stripe.enabled');
+        const paymentsEnabled = configService.get<string>('stripe.enabled');
 
-        if (paymentsEnabled) {
+        if (paymentsEnabled === 'true') {
           logger.log('Payments ENABLED - using StripePaymentService');
           return new StripePaymentService(configService);
+        } else if (paymentsEnabled === 'mock') {
+          logger.warn('Payments in MOCK mode - using MockPaymentService (dev only)');
+          return new MockPaymentService();
         } else {
           logger.warn('Payments DISABLED - using NullPaymentService');
           return new NullPaymentService();
