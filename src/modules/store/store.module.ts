@@ -23,6 +23,7 @@ import {
   GetSellerDashboardUseCase,
   GetStoreByIdUseCase,
 } from './application/use-cases';
+import { GetDashboardStatsUseCase } from '@modules/seller/application/use-cases/get-dashboard-stats.use-case';
 
 // Controllers
 import {
@@ -33,11 +34,15 @@ import {
 
 // External modules
 import { IdentityModule } from '@modules/identity/identity.module';
+import { CatalogModule } from '@modules/catalog/catalog.module';
+import { BookingModule } from '@modules/booking/booking.module';
 
 @Module({
   imports: [
     TypeOrmModule.forFeature([Category, Seller, Store]),
     forwardRef(() => IdentityModule),
+    forwardRef(() => CatalogModule),
+    forwardRef(() => BookingModule),
   ],
   controllers: [CategoryController, SellerController, StoreController],
   providers: [
@@ -60,6 +65,7 @@ import { IdentityModule } from '@modules/identity/identity.module';
     GetCategoriesUseCase,
     GetSellerDashboardUseCase,
     GetStoreByIdUseCase,
+    GetDashboardStatsUseCase,
   ],
   exports: [CATEGORY_REPOSITORY, SELLER_REPOSITORY, STORE_REPOSITORY],
 })

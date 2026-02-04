@@ -25,6 +25,7 @@ import {
   ApplySellerUseCase,
   GetSellerDashboardUseCase,
 } from '../../application/use-cases';
+import { GetDashboardStatsUseCase } from '@modules/seller/application/use-cases/get-dashboard-stats.use-case';
 
 @ApiTags('Seller')
 @Controller('seller')
@@ -34,6 +35,7 @@ export class SellerController {
   constructor(
     private readonly applySellerUseCase: ApplySellerUseCase,
     private readonly getSellerDashboardUseCase: GetSellerDashboardUseCase,
+    private readonly getDashboardStatsUseCase: GetDashboardStatsUseCase,
   ) {}
 
   @Post('apply')
@@ -64,5 +66,17 @@ export class SellerController {
     @CurrentUser() user: AuthenticatedUser,
   ): Promise<SellerDashboardResponseDto> {
     return this.getSellerDashboardUseCase.execute(user.id);
+  }
+
+  @Get('dashboard/stats')
+  @UseGuards(RolesGuard)
+  @Roles(UserRole.SELLER)
+  @ApiOperation({ summary: 'Get dashboard statistics' })
+  @ApiResponse({ status: 200, description: 'Dashboard statistics' })
+  async getDashboardStats(
+    @CurrentUser() user: AuthenticatedUser,
+  ) {
+    const stats = await this.getDashboardStatsUseCase.execute(user.id);
+    return stats;
   }
 }

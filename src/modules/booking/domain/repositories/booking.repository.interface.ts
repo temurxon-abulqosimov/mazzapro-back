@@ -7,6 +7,13 @@ export interface IBookingRepository {
   findByIdempotencyKey(key: string): Promise<Booking | null>;
   findByUserId(userId: string, status?: 'active' | 'past'): Promise<Booking[]>;
   findByStoreId(storeId: string, status?: BookingStatus): Promise<Booking[]>;
+  findByStoreIdAndDateRange(
+    storeId: string,
+    status: BookingStatus,
+    startDate: Date,
+    endDate: Date,
+  ): Promise<Booking[]>;
+  countByStoreIdAndStatus(storeId: string, status: BookingStatus): Promise<number>;
   findExpiredActive(): Promise<Booking[]>;
   save(booking: Booking): Promise<Booking>;
   generateOrderNumber(): Promise<string>;

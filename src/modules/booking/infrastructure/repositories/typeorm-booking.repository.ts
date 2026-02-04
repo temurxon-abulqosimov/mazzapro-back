@@ -1,6 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository, In, LessThan } from 'typeorm';
+import { Repository, In, LessThan, Between } from 'typeorm';
 import { Booking, BookingStatus } from '../../domain/entities/booking.entity';
 import { IBookingRepository } from '../../domain/repositories/booking.repository.interface';
 import { RedisService } from '@common/redis/redis.service';
@@ -85,6 +85,34 @@ export class TypeOrmBookingRepository implements IBookingRepository {
       where: {
         status: In([BookingStatus.CONFIRMED, BookingStatus.READY]),
         pickupWindowEnd: LessThan(new Date()),
+      },
+    });
+  }
+
+  async findByStoreIdAndDateRange(
+    storeId: string,
+    status: BookingStatus,
+    startDate: Date,
+    endDate: Date,
+  ): Promise<Booking[]> {
+    return this.repository.find({
+      where: {
+        storeId,
+        status,
+        createdAt: Between(startDate, endDate),
+      },
+      relations: ['payment', 'product'],
+    });
+  }
+
+  async countByStoreIdAndStatus(
+    storeId: string,
+    status: BookingStatus,
+  ): Promise<number> {
+    return this.repository.count({
+      where: {
+        storeId,
+        status,
       },
     });
   }
