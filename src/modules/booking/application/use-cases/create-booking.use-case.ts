@@ -1,6 +1,7 @@
 import { Injectable, Inject, Logger } from '@nestjs/common';
 import { DataSource } from 'typeorm';
 import { Booking, BookingStatus } from '../../domain/entities/booking.entity';
+import { Product } from '../../../../catalog/domain/entities/product.entity';
 import { Payment, PaymentStatus } from '../../domain/entities/payment.entity';
 import {
   IBookingRepository,
@@ -37,7 +38,7 @@ export class CreateBookingUseCase {
     private readonly paymentService: IPaymentService,
     private readonly qrCodeService: QrCodeService,
     private readonly dataSource: DataSource,
-  ) {}
+  ) { }
 
   async execute(
     userId: string,
@@ -61,7 +62,7 @@ export class CreateBookingUseCase {
     try {
       // Get product with lock
       const product = await queryRunner.manager.findOne(
-        (await import('@modules/catalog/domain/entities/product.entity')).Product,
+        Product,
         {
           where: { id: dto.productId },
           lock: { mode: 'pessimistic_write' },
