@@ -38,12 +38,7 @@ export class Favorite {
   @JoinColumn({ name: 'store_id' })
   store: Store;
 
-  @Column({
-    type: 'enum',
-    enum: FavoriteType,
-    default: FavoriteType.STORE,
-  })
-  type: FavoriteType;
+
 
   @CreateDateColumn({ name: 'created_at' })
   createdAt: Date;
@@ -52,7 +47,6 @@ export class Favorite {
     const favorite = new Favorite();
     favorite.userId = userId;
     favorite.storeId = storeId;
-    favorite.type = FavoriteType.STORE;
     return favorite;
   }
 }
