@@ -7,3 +7,4 @@ export { AddDisplayOrderToCategories1738245000000 } from './migrations/173824500
 export { UpdateSellersTable1738246000000 } from './migrations/1738246000000-UpdateSellersTable';
 export { AddLocationFieldsToSellers1738247000000 } from './migrations/1738247000000-AddLocationFieldsToSellers';
 export { AddCreatedAtToCategories1738248000000 } from './migrations/1738248000000-AddCreatedAtToCategories';
+export { AddIsOpenToStores1738728000000 } from './migrations/1738728000000-AddIsOpenToStores';
