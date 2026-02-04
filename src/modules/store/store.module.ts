@@ -22,6 +22,7 @@ import {
   GetCategoriesUseCase,
   GetSellerDashboardUseCase,
   GetStoreByIdUseCase,
+  ToggleStoreStatusUseCase,
 } from './application/use-cases';
 import { GetDashboardStatsUseCase } from '@modules/seller/application/use-cases/get-dashboard-stats.use-case';
 
@@ -66,6 +67,7 @@ import { BookingModule } from '@modules/booking/booking.module';
     GetSellerDashboardUseCase,
     GetStoreByIdUseCase,
     GetDashboardStatsUseCase,
+    ToggleStoreStatusUseCase,
   ],
   exports: [CATEGORY_REPOSITORY, SELLER_REPOSITORY, STORE_REPOSITORY],
 })

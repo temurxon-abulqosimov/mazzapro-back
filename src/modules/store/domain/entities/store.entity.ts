@@ -72,6 +72,9 @@ export class Store {
   @Index()
   isActive: boolean;
 
+  @Column({ name: 'is_open', default: true })
+  isOpen: boolean;
+
   @ManyToMany(() => Category)
   @JoinTable({
     name: 'store_categories',
@@ -126,5 +129,17 @@ export class Store {
 
   activate(): void {
     this.isActive = true;
+  }
+
+  open(): void {
+    this.isOpen = true;
+  }
+
+  close(): void {
+    this.isOpen = false;
+  }
+
+  toggleOpen(): void {
+    this.isOpen = !this.isOpen;
   }
 }

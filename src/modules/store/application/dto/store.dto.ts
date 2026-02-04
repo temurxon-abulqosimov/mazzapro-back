@@ -1,4 +1,5 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
+import { IsBoolean } from 'class-validator';
 import { CategoryResponseDto } from './category.dto';
 
 export class StoreLocationDto {
@@ -59,4 +60,15 @@ export class StoreDetailResponseDto extends StoreResponseDto {
 
   @ApiProperty()
   createdAt: Date;
+}
+
+export class ToggleStoreStatusDto {
+  @ApiProperty({ description: 'Store open status' })
+  @IsBoolean()
+  isOpen: boolean;
+}
+
+export class StoreStatusResponseDto {
+  @ApiProperty()
+  isOpen: boolean;
 }

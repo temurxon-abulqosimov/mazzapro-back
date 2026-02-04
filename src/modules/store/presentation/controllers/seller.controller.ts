@@ -2,6 +2,7 @@ import {
   Controller,
   Post,
   Get,
+  Put,
   Body,
   UseGuards,
 } from '@nestjs/common';
@@ -20,10 +21,13 @@ import {
   ApplySellerDto,
   SellerApplicationResponseDto,
   SellerDashboardResponseDto,
+  ToggleStoreStatusDto,
+  StoreStatusResponseDto,
 } from '../../application/dto';
 import {
   ApplySellerUseCase,
   GetSellerDashboardUseCase,
+  ToggleStoreStatusUseCase,
 } from '../../application/use-cases';
 import { GetDashboardStatsUseCase } from '@modules/seller/application/use-cases/get-dashboard-stats.use-case';
 
@@ -36,6 +40,7 @@ export class SellerController {
     private readonly applySellerUseCase: ApplySellerUseCase,
     private readonly getSellerDashboardUseCase: GetSellerDashboardUseCase,
     private readonly getDashboardStatsUseCase: GetDashboardStatsUseCase,
+    private readonly toggleStoreStatusUseCase: ToggleStoreStatusUseCase,
   ) {}
 
   @Post('apply')
@@ -78,5 +83,18 @@ export class SellerController {
   ) {
     const stats = await this.getDashboardStatsUseCase.execute(user.id);
     return stats;
+  }
+
+  @Put('store/status')
+  @UseGuards(RolesGuard)
+  @Roles(UserRole.SELLER)
+  @ApiOperation({ summary: 'Toggle store open/close status' })
+  @ApiResponse({ status: 200, description: 'Store status updated', type: StoreStatusResponseDto })
+  async toggleStoreStatus(
+    @CurrentUser() user: AuthenticatedUser,
+    @Body() dto: ToggleStoreStatusDto,
+  ): Promise<StoreStatusResponseDto> {
+    const result = await this.toggleStoreStatusUseCase.execute(user.id, dto.isOpen);
+    return result;
   }
 }
