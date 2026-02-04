@@ -192,7 +192,10 @@ export class CreateBookingUseCase {
 
       return savedBooking;
     } catch (error) {
-      await queryRunner.rollbackTransaction();
+      // Only rollback if transaction is still active
+      if (queryRunner.isTransactionActive) {
+        await queryRunner.rollbackTransaction();
+      }
 
       this.logger.error({
         message: 'Booking creation failed',
@@ -206,7 +209,10 @@ export class CreateBookingUseCase {
 
       throw error;
     } finally {
-      await queryRunner.release();
+      // Only release if still connected
+      if (!queryRunner.isReleased) {
+        await queryRunner.release();
+      }
     }
   }
 }
