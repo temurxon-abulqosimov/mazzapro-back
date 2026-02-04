@@ -44,25 +44,36 @@ export class CompleteBookingUseCase {
   ) {}
 
   async execute(sellerId: string, storeId: string, qrCodeData: string): Promise<Booking> {
+    this.logger.log(`Attempting to complete booking with QR: ${qrCodeData}`);
+    this.logger.log(`Seller ID: ${sellerId}, Store ID: ${storeId}`);
+
     // Parse QR code
     const parsed = this.qrCodeService.parseQrCodeData(qrCodeData);
     if (!parsed) {
+      this.logger.error(`Invalid QR code format: ${qrCodeData}`);
       throw new DomainException('INVALID_QR_CODE', 'Invalid QR code format');
     }
+
+    this.logger.log(`Parsed QR - Order: ${parsed.orderNumber}, Booking ID: ${parsed.bookingId}`);
 
     const booking = await this.bookingRepository.findByIdWithRelations(parsed.bookingId);
 
     if (!booking) {
+      this.logger.error(`Booking not found with ID: ${parsed.bookingId}`);
       throw new EntityNotFoundException('Booking', parsed.bookingId);
     }
 
+    this.logger.log(`Found booking ${booking.orderNumber} with status ${booking.status}, storeId: ${booking.storeId}`);
+
     // Verify store ownership
     if (booking.storeId !== storeId) {
+      this.logger.error(`Store mismatch - booking.storeId: ${booking.storeId}, expected: ${storeId}`);
       throw new UnauthorizedAccessException('Booking');
     }
 
     // Verify booking can be completed
     if (!booking.isActive()) {
+      this.logger.error(`Booking cannot be completed - status: ${booking.status}`);
       throw new DomainException(
         'BOOKING_CANNOT_COMPLETE',
         `Cannot complete booking with status ${booking.status}`,
