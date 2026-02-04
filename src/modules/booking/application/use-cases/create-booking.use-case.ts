@@ -1,7 +1,7 @@
 import { Injectable, Inject, Logger } from '@nestjs/common';
 import { DataSource } from 'typeorm';
 import { Booking, BookingStatus } from '../../domain/entities/booking.entity';
-import { Product } from '../../../../catalog/domain/entities/product.entity';
+import { Product } from '../../../catalog/domain/entities/product.entity';
 import { Payment, PaymentStatus } from '../../domain/entities/payment.entity';
 import {
   IBookingRepository,
