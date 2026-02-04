@@ -60,13 +60,12 @@ export class CreateBookingUseCase {
     await queryRunner.startTransaction();
 
     try {
-      // Get product with lock
+      // Get product with lock (without relations to avoid FOR UPDATE on outer join)
       const product = await queryRunner.manager.findOne(
         Product,
         {
           where: { id: dto.productId },
           lock: { mode: 'pessimistic_write' },
-          relations: ['store'],
         },
       );
 
