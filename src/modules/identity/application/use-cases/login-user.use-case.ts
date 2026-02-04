@@ -9,6 +9,14 @@ import {
   IRefreshTokenRepository,
   REFRESH_TOKEN_REPOSITORY,
 } from '../../domain/repositories/refresh-token.repository.interface';
+import {
+  ISellerRepository,
+  SELLER_REPOSITORY,
+} from '@modules/store/domain/repositories/seller.repository.interface';
+import {
+  IStoreRepository,
+  STORE_REPOSITORY,
+} from '@modules/store/domain/repositories/store.repository.interface';
 import { PasswordService } from '../../infrastructure/services/password.service';
 import {
   JwtTokenService,
@@ -16,6 +24,7 @@ import {
 } from '../../infrastructure/services/jwt-token.service';
 import { LoginDto } from '../dto/login.dto';
 import { InvalidCredentialsException } from '@common/exceptions';
+import { UserRole } from '@common/types';
 
 interface LoginResult {
   user: User;
@@ -29,9 +38,13 @@ export class LoginUserUseCase {
     private readonly userRepository: IUserRepository,
     @Inject(REFRESH_TOKEN_REPOSITORY)
     private readonly refreshTokenRepository: IRefreshTokenRepository,
+    @Inject(SELLER_REPOSITORY)
+    private readonly sellerRepository: ISellerRepository,
+    @Inject(STORE_REPOSITORY)
+    private readonly storeRepository: IStoreRepository,
     private readonly passwordService: PasswordService,
     private readonly jwtTokenService: JwtTokenService,
-  ) {}
+  ) { }
 
   async execute(dto: LoginDto): Promise<LoginResult> {
     // Find user by email
@@ -58,12 +71,25 @@ export class LoginUserUseCase {
     user.recordLogin();
     await this.userRepository.save(user);
 
+    let storeId: string | undefined;
+
+    if (user.role === UserRole.SELLER) {
+      const seller = await this.sellerRepository.findByUserId(user.id);
+      if (seller) {
+        const store = await this.storeRepository.findBySellerId(seller.id);
+        if (store) {
+          storeId = store.id;
+        }
+      }
+    }
+
     // Generate token pair
     const tokens = await this.jwtTokenService.generateTokenPair({
       id: user.id,
       email: user.email,
       role: user.role,
       marketId: user.marketId,
+      sellerId: storeId,
     });
 
     // Store refresh token

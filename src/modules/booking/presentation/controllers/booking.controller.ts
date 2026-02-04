@@ -9,6 +9,7 @@ import {
   UseGuards,
   HttpCode,
   HttpStatus,
+  Inject,
 } from '@nestjs/common';
 import {
   ApiTags,
@@ -39,6 +40,14 @@ import {
   CancelBookingUseCase,
   CompleteBookingUseCase,
 } from '../../application/use-cases';
+import {
+  IStoreRepository,
+  STORE_REPOSITORY,
+} from '@modules/store/domain/repositories/store.repository.interface';
+import {
+  EntityNotFoundException,
+  UnauthorizedAccessException,
+} from '@common/exceptions';
 
 @ApiTags('Bookings')
 @Controller('bookings')
@@ -212,22 +221,34 @@ export class BookingController {
 export class SellerOrderController {
   constructor(
     private readonly completeBookingUseCase: CompleteBookingUseCase,
+    @Inject(STORE_REPOSITORY)
+    private readonly storeRepository: IStoreRepository,
   ) {}
 
   @Post(':id/complete')
   @HttpCode(HttpStatus.OK)
   @ApiOperation({ summary: 'Mark order as picked up (scan QR)' })
   @ApiResponse({ status: 200, description: 'Order completed' })
+  @ApiResponse({ status: 403, description: 'Seller does not own this store or no store found' })
+  @ApiResponse({ status: 404, description: 'Booking not found' })
   async completeOrder(
     @CurrentUser() user: AuthenticatedUser,
     @Param('id', ParseUUIDPipe) id: string,
     @Body() dto: CompleteBookingDto,
   ) {
-    // TODO: Get storeId from seller context
-    const storeId = user.sellerId || '';
+    if (!user.sellerId) {
+      throw new UnauthorizedAccessException('User is not a seller');
+    }
+
+    // Get the seller's store
+    const store = await this.storeRepository.findBySellerId(user.sellerId);
+    if (!store) {
+      throw new EntityNotFoundException('Store', user.sellerId);
+    }
+
     const booking = await this.completeBookingUseCase.execute(
-      user.id,
-      storeId,
+      user.sellerId,
+      store.id,
       dto.qrCodeData,
     );
 
