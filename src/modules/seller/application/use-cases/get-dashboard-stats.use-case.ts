@@ -24,6 +24,7 @@ export interface DashboardStatsDto {
   earningsChange: number;
   ordersRescued: number;
   activeListings: number;
+  isOpen: boolean;
 }
 
 @Injectable()
@@ -117,6 +118,7 @@ export class GetDashboardStatsUseCase {
       earningsChange,
       ordersRescued,
       activeListings,
+      isOpen: store.isOpen,
     };
   }
 }
