@@ -90,41 +90,65 @@ export class CreateBookingUseCase {
       product.reserve(dto.quantity);
       await queryRunner.manager.save(product);
 
-      // Generate order number
-      const orderNumber = await this.bookingRepository.generateOrderNumber();
+      // Generate order number with retry logic for duplicates
+      let orderNumber: string;
+      let savedBooking: Booking;
+      let retryCount = 0;
+      const maxRetries = 3;
 
-      // Create booking
-      const booking = new Booking();
-      booking.orderNumber = orderNumber;
-      booking.userId = userId;
-      booking.productId = dto.productId;
-      booking.storeId = product.storeId;
-      booking.quantity = dto.quantity;
-      booking.unitPrice = product.discountedPrice;
-      booking.totalPrice = product.discountedPrice * dto.quantity;
-      booking.status = BookingStatus.PENDING;
-      booking.pickupWindowStart = product.pickupWindowStart;
-      booking.pickupWindowEnd = product.pickupWindowEnd;
-      booking.idempotencyKey = idempotencyKey;
+      while (retryCount < maxRetries) {
+        try {
+          orderNumber = await this.bookingRepository.generateOrderNumber();
 
-      // Generate QR code data
-      booking.qrCodeData = this.qrCodeService.generateQrCodeData(
-        orderNumber,
-        booking.id || 'pending',
-      );
+          // Create booking
+          const booking = new Booking();
+          booking.orderNumber = orderNumber;
+          booking.userId = userId;
+          booking.productId = dto.productId;
+          booking.storeId = product.storeId;
+          booking.quantity = dto.quantity;
+          booking.unitPrice = product.discountedPrice;
+          booking.totalPrice = product.discountedPrice * dto.quantity;
+          booking.status = BookingStatus.PENDING;
+          booking.pickupWindowStart = product.pickupWindowStart;
+          booking.pickupWindowEnd = product.pickupWindowEnd;
+          booking.idempotencyKey = idempotencyKey;
 
-      // Create payment record
-      const payment = new Payment();
-      payment.amount = booking.totalPrice;
-      payment.currency = 'USD';
-      payment.status = PaymentStatus.PENDING;
-      payment.idempotencyKey = `${idempotencyKey}_payment`;
-      payment.providerPaymentMethodId = dto.paymentMethodId;
+          // Generate QR code data
+          booking.qrCodeData = this.qrCodeService.generateQrCodeData(
+            orderNumber,
+            booking.id || 'pending',
+          );
 
-      booking.payment = payment;
+          // Create payment record
+          const payment = new Payment();
+          payment.amount = booking.totalPrice;
+          payment.currency = 'USD';
+          payment.status = PaymentStatus.PENDING;
+          payment.idempotencyKey = `${idempotencyKey}_payment`;
+          payment.providerPaymentMethodId = dto.paymentMethodId;
 
-      // Save booking (pending)
-      const savedBooking = await queryRunner.manager.save(booking);
+          booking.payment = payment;
+
+          // Save booking (pending) - this may fail with duplicate order number
+          savedBooking = await queryRunner.manager.save(booking);
+          break; // Success, exit retry loop
+        } catch (error) {
+          // Check if it's a duplicate order number error
+          if (error?.code === '23505' && error?.constraint === 'UQ_bookings_order_number') {
+            retryCount++;
+            this.logger.warn(`Duplicate order number ${orderNumber}, retrying (${retryCount}/${maxRetries})`);
+            if (retryCount >= maxRetries) {
+              throw new Error(`Failed to generate unique order number after ${maxRetries} attempts`);
+            }
+            // Wait a bit before retrying to avoid race conditions
+            await new Promise(resolve => setTimeout(resolve, 50 * retryCount));
+            continue;
+          }
+          // If it's not a duplicate error, rethrow
+          throw error;
+        }
+      }
 
       // Update QR code data with actual ID
       savedBooking.qrCodeData = this.qrCodeService.generateQrCodeData(
