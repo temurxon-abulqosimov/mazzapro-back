@@ -9,7 +9,7 @@ export class GetFavoritesUseCase {
   constructor(
     @Inject(FAVORITE_REPOSITORY)
     private readonly favoriteRepository: IFavoriteRepository,
-  ) {}
+  ) { }
 
   async execute(
     userId: string,
@@ -83,19 +83,54 @@ export class GetFavoritesUseCase {
     };
   }
 
-  private mapProductToResponse(favorite: any): FavoriteProductResponseDto {
+  private mapProductToResponse(favorite: any): any {
     const product = favorite.product;
+    if (!product) return null;
 
     return {
-      id: product?.id || favorite.productId,
-      name: product?.name || '',
-      imageUrl: product?.images?.[0]?.url || null,
-      price: product?.discountedPrice || product?.price || 0,
-      originalPrice: product?.price || 0,
-      discount: product?.discountPercentage || 0,
-      storeName: product?.store?.name || '',
-      addedAt: favorite.createdAt,
+      id: product.id,
+      name: product.name,
+      description: product.description,
+      originalPrice: product.price,
+      discountedPrice: product.discountedPrice,
+      discountPercent: product.discountPercentage,
+      quantity: product.quantity,
+      quantityAvailable: product.quantityAvailable || 0,
+      pickupWindow: {
+        start: product.pickupWindowStart,
+        end: product.pickupWindowEnd,
+        label: this.formatPickupWindow(product.pickupWindowStart, product.pickupWindowEnd),
+        dateLabel: 'Today' // Simplified for now
+      },
+      status: product.status,
+      images: product.images?.map((img: any) => ({
+        url: img.url,
+        thumbnailUrl: img.thumbnailUrl,
+        position: img.position
+      })) || [],
+      store: {
+        id: product.store?.id,
+        name: product.store?.name,
+        rating: Number(product.store?.rating || 0),
+        imageUrl: product.store?.imageUrl,
+        location: {
+          address: product.store?.address,
+          lat: Number(product.store?.lat),
+          lng: Number(product.store?.lng)
+        }
+      },
+      category: {
+        id: product.category?.id,
+        name: product.category?.name,
+        slug: product.category?.slug
+      },
+      isFavorited: true,
+      createdAt: favorite.createdAt
     };
+  }
+
+  private formatPickupWindow(start: string, end: string): string {
+    return `${start} - ${end}`;
   }
 
   private calculateDistance(lat1: number, lng1: number, lat2: number, lng2: number): number {

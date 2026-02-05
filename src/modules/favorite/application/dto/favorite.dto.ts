@@ -1,5 +1,6 @@
 import { IsUUID } from 'class-validator';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
+import { ProductResponseDto } from '@modules/catalog/application/dto/product.dto';
 
 export class AddFavoriteDto {
   @ApiProperty({ description: 'Store ID to add to favorites' })
@@ -67,7 +68,7 @@ export class FavoriteProductResponseDto {
 
 export class FavoriteListResponseDto {
   @ApiProperty({ type: [FavoriteStoreResponseDto] })
-  favorites: (FavoriteStoreResponseDto | FavoriteProductResponseDto)[];
+  favorites: (FavoriteStoreResponseDto | ProductResponseDto)[];
 
   @ApiProperty()
   total: number;
