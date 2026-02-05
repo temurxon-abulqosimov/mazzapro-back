@@ -15,7 +15,7 @@ export class TypeOrmFavoriteRepository implements IFavoriteRepository {
   async findById(id: string): Promise<Favorite | null> {
     return this.repository.findOne({
       where: { id },
-      relations: ['store', 'product', 'product.images'],
+      relations: ['store', 'product', 'product.images', 'product.store', 'product.category'],
     });
   }
 
@@ -37,6 +37,8 @@ export class TypeOrmFavoriteRepository implements IFavoriteRepository {
       .leftJoinAndSelect('favorite.store', 'store')
       .leftJoinAndSelect('favorite.product', 'product')
       .leftJoinAndSelect('product.images', 'images')
+      .leftJoinAndSelect('product.store', 'productStore')
+      .leftJoinAndSelect('product.category', 'productCategory')
       .where('favorite.user_id = :userId', { userId });
 
     if (type) {

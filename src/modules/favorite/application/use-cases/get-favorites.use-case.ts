@@ -91,22 +91,22 @@ export class GetFavoritesUseCase {
       id: product.id,
       name: product.name,
       description: product.description,
-      originalPrice: product.price,
+      originalPrice: product.originalPrice,
       discountedPrice: product.discountedPrice,
-      discountPercent: product.discountPercentage,
+      discountPercent: product.discountPercent,
       quantity: product.quantity,
       quantityAvailable: product.quantityAvailable || 0,
       pickupWindow: {
         start: product.pickupWindowStart,
         end: product.pickupWindowEnd,
         label: this.formatPickupWindow(product.pickupWindowStart, product.pickupWindowEnd),
-        dateLabel: 'Today' // Simplified for now
+        dateLabel: 'Today',
       },
       status: product.status,
       images: product.images?.map((img: any) => ({
         url: img.url,
         thumbnailUrl: img.thumbnailUrl,
-        position: img.position
+        position: img.position,
       })) || [],
       store: {
         id: product.store?.id,
@@ -116,16 +116,16 @@ export class GetFavoritesUseCase {
         location: {
           address: product.store?.address,
           lat: Number(product.store?.lat),
-          lng: Number(product.store?.lng)
-        }
+          lng: Number(product.store?.lng),
+        },
       },
       category: {
         id: product.category?.id,
         name: product.category?.name,
-        slug: product.category?.slug
+        slug: product.category?.slug,
       },
       isFavorited: true,
-      createdAt: favorite.createdAt
+      createdAt: favorite.createdAt,
     };
   }
 
