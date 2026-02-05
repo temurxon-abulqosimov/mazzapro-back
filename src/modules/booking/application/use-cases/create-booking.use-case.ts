@@ -91,8 +91,10 @@ export class CreateBookingUseCase {
       await queryRunner.manager.save(product);
 
       // Generate order number with retry logic for duplicates
-      let orderNumber: string;
-      let savedBooking: Booking;
+      let orderNumber: string = '';
+      let savedBooking: Booking | undefined;
+      let booking: Booking | undefined;
+      let payment: Payment | undefined;
       let retryCount = 0;
       const maxRetries = 3;
 
@@ -101,7 +103,7 @@ export class CreateBookingUseCase {
           orderNumber = await this.bookingRepository.generateOrderNumber();
 
           // Create booking
-          const booking = new Booking();
+          booking = new Booking();
           booking.orderNumber = orderNumber;
           booking.userId = userId;
           booking.productId = dto.productId;
@@ -121,7 +123,7 @@ export class CreateBookingUseCase {
           );
 
           // Create payment record
-          const payment = new Payment();
+          payment = new Payment();
           payment.amount = booking.totalPrice;
           payment.currency = 'USD';
           payment.status = PaymentStatus.PENDING;
@@ -148,6 +150,11 @@ export class CreateBookingUseCase {
           // If it's not a duplicate error, rethrow
           throw error;
         }
+      }
+
+      // Ensure booking was saved successfully
+      if (!savedBooking || !booking || !payment) {
+        throw new Error('Failed to create booking');
       }
 
       // Update QR code data with actual ID
