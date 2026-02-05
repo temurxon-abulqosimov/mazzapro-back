@@ -104,7 +104,16 @@ export class CreateBookingUseCase {
           const savepointName = `booking_save_attempt_${retryCount}`;
           await queryRunner.query(`SAVEPOINT ${savepointName}`);
 
-          orderNumber = await this.bookingRepository.generateOrderNumber();
+          // Generate order number with random suffix on retries to avoid duplicates
+          if (retryCount === 0) {
+            orderNumber = await this.bookingRepository.generateOrderNumber();
+          } else {
+            // Add random suffix on retry to ensure uniqueness (Redis may be returning duplicates)
+            const baseNumber = await this.bookingRepository.generateOrderNumber();
+            const randomSuffix = Math.random().toString(36).substring(2, 5).toUpperCase();
+            orderNumber = `${baseNumber}-${randomSuffix}`;
+            this.logger.log(`Generated order number with random suffix on retry ${retryCount}: ${orderNumber}`);
+          }
 
           // Create booking
           booking = new Booking();
