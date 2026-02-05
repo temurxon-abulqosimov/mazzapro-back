@@ -96,11 +96,13 @@ export class BookingController {
     @CurrentUser() user: AuthenticatedUser,
     @Query('status') status?: 'active' | 'past',
   ): Promise<{ bookings: BookingListItemDto[]; summary: { activeCount: number } }> {
+    console.log('📋 getUserBookings called - userId:', user.id, 'status:', status);
     const bookings = await this.getUserBookingsUseCase.execute(user.id, status);
+    console.log('📋 getUserBookings found', bookings.length, 'bookings');
 
     const activeCount = bookings.filter((b) => b.isActive()).length;
 
-    return {
+    const response = {
       bookings: bookings.map((b) => ({
         id: b.id,
         orderNumber: b.orderNumber,
@@ -128,6 +130,9 @@ export class BookingController {
       })),
       summary: { activeCount },
     };
+
+    console.log('📋 getUserBookings returning:', JSON.stringify(response, null, 2).substring(0, 500));
+    return response;
   }
 
   @Get(':id')
