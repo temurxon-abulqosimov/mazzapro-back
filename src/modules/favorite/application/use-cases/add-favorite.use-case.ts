@@ -2,19 +2,8 @@ import { Injectable, Inject } from '@nestjs/common';
 import { IFavoriteRepository, FAVORITE_REPOSITORY } from '../../domain/repositories';
 import { Favorite } from '../../domain/entities/favorite.entity';
 import { NotFoundException } from '@common/exceptions/domain.exception';
-
-// Store repository interface (from Store module)
-export interface IStoreRepository {
-  findById(id: string): Promise<{ id: string; name: string } | null>;
-}
-
-// Product repository interface (from Product module)
-export interface IProductRepository {
-  findById(id: string): Promise<{ id: string; name: string } | null>;
-}
-
-export const STORE_REPOSITORY = Symbol('IStoreRepository');
-export const PRODUCT_REPOSITORY = Symbol('IProductRepository');
+import { IStoreRepository, STORE_REPOSITORY } from '@modules/store/domain/repositories';
+import { IProductRepository, PRODUCT_REPOSITORY } from '@modules/catalog/domain/repositories';
 
 @Injectable()
 export class AddFavoriteUseCase {
