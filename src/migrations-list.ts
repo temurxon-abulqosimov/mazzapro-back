@@ -8,3 +8,4 @@ export { UpdateSellersTable1738246000000 } from './migrations/1738246000000-Upda
 export { AddLocationFieldsToSellers1738247000000 } from './migrations/1738247000000-AddLocationFieldsToSellers';
 export { AddCreatedAtToCategories1738248000000 } from './migrations/1738248000000-AddCreatedAtToCategories';
 export { AddIsOpenToStores1738728000000 } from './migrations/1738728000000-AddIsOpenToStores';
+export { AddProductSupportToFavorites1738830000000 } from './migrations/1738830000000-AddProductSupportToFavorites';

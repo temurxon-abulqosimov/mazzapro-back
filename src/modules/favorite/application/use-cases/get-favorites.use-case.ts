@@ -1,6 +1,7 @@
 import { Injectable, Inject } from '@nestjs/common';
 import { IFavoriteRepository, FAVORITE_REPOSITORY } from '../../domain/repositories';
-import { FavoriteListResponseDto, FavoriteStoreResponseDto } from '../dto';
+import { FavoriteListResponseDto, FavoriteStoreResponseDto, FavoriteProductResponseDto } from '../dto';
+import { FavoriteType } from '../../domain/entities/favorite.entity';
 import { encodeCursor } from '@common/utils/pagination.util';
 
 @Injectable()
@@ -12,14 +13,15 @@ export class GetFavoritesUseCase {
 
   async execute(
     userId: string,
+    type?: FavoriteType,
     limit = 20,
     cursor?: string,
     userLat?: number,
     userLng?: number,
   ): Promise<FavoriteListResponseDto> {
     const [favorites, total] = await Promise.all([
-      this.favoriteRepository.findByUserId(userId, limit, cursor),
-      this.favoriteRepository.countByUserId(userId),
+      this.favoriteRepository.findByUserId(userId, type, limit, cursor),
+      this.favoriteRepository.countByUserId(userId, type),
     ]);
 
     const hasMore = favorites.length === limit;
@@ -28,7 +30,12 @@ export class GetFavoritesUseCase {
       : undefined;
 
     return {
-      favorites: favorites.map((f) => this.mapToResponse(f, userLat, userLng)),
+      favorites: favorites.map((f) => {
+        if (f.type === FavoriteType.PRODUCT) {
+          return this.mapProductToResponse(f);
+        }
+        return this.mapStoreToResponse(f, userLat, userLng);
+      }),
       total,
       nextCursor,
     };
@@ -39,11 +46,20 @@ export class GetFavoritesUseCase {
     return !!favorite;
   }
 
+  async checkIsFavoriteProduct(userId: string, productId: string): Promise<boolean> {
+    const favorite = await this.favoriteRepository.findByUserAndProduct(userId, productId);
+    return !!favorite;
+  }
+
   async getFavoriteStoreIds(userId: string): Promise<string[]> {
     return this.favoriteRepository.getStoreIdsByUserId(userId);
   }
 
-  private mapToResponse(
+  async getFavoriteProductIds(userId: string): Promise<string[]> {
+    return this.favoriteRepository.getProductIdsByUserId(userId);
+  }
+
+  private mapStoreToResponse(
     favorite: any,
     userLat?: number,
     userLng?: number,
@@ -63,6 +79,21 @@ export class GetFavoritesUseCase {
       rating: Number(store?.rating || 0),
       reviewCount: store?.reviewCount || 0,
       distance,
+      addedAt: favorite.createdAt,
+    };
+  }
+
+  private mapProductToResponse(favorite: any): FavoriteProductResponseDto {
+    const product = favorite.product;
+
+    return {
+      id: product?.id || favorite.productId,
+      name: product?.name || '',
+      imageUrl: product?.images?.[0]?.url || null,
+      price: product?.discountedPrice || product?.price || 0,
+      originalPrice: product?.price || 0,
+      discount: product?.discountPercentage || 0,
+      storeName: product?.store?.name || '',
       addedAt: favorite.createdAt,
     };
   }

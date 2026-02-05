@@ -39,9 +39,35 @@ export class FavoriteStoreResponseDto {
   addedAt: Date;
 }
 
+export class FavoriteProductResponseDto {
+  @ApiProperty()
+  id: string;
+
+  @ApiProperty()
+  name: string;
+
+  @ApiPropertyOptional()
+  imageUrl?: string | null;
+
+  @ApiProperty()
+  price: number;
+
+  @ApiProperty()
+  originalPrice: number;
+
+  @ApiProperty()
+  discount: number;
+
+  @ApiProperty()
+  storeName: string;
+
+  @ApiProperty()
+  addedAt: Date;
+}
+
 export class FavoriteListResponseDto {
   @ApiProperty({ type: [FavoriteStoreResponseDto] })
-  favorites: FavoriteStoreResponseDto[];
+  favorites: (FavoriteStoreResponseDto | FavoriteProductResponseDto)[];
 
   @ApiProperty()
   total: number;

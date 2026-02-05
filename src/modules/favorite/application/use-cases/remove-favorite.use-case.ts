@@ -8,8 +8,13 @@ export class RemoveFavoriteUseCase {
     private readonly favoriteRepository: IFavoriteRepository,
   ) {}
 
-  async execute(userId: string, storeId: string): Promise<{ success: boolean; wasRemoved: boolean }> {
+  async executeStore(userId: string, storeId: string): Promise<{ success: boolean; wasRemoved: boolean }> {
     const wasRemoved = await this.favoriteRepository.deleteByUserAndStore(userId, storeId);
+    return { success: true, wasRemoved };
+  }
+
+  async executeProduct(userId: string, productId: string): Promise<{ success: boolean; wasRemoved: boolean }> {
+    const wasRemoved = await this.favoriteRepository.deleteByUserAndProduct(userId, productId);
     return { success: true, wasRemoved };
   }
 }

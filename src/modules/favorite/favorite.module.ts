@@ -14,6 +14,7 @@ import {
   RemoveFavoriteUseCase,
   GetFavoritesUseCase,
   STORE_REPOSITORY,
+  PRODUCT_REPOSITORY,
 } from './application/use-cases';
 
 // Presentation
@@ -34,6 +35,14 @@ import { FavoriteController } from './presentation/controllers';
       provide: STORE_REPOSITORY,
       useValue: {
         findById: async (id: string) => ({ id, name: 'Store' }),
+      },
+    },
+    // Note: PRODUCT_REPOSITORY should be provided by ProductModule
+    // Placeholder for now - will be overridden when importing ProductModule
+    {
+      provide: PRODUCT_REPOSITORY,
+      useValue: {
+        findById: async (id: string) => ({ id, name: 'Product' }),
       },
     },
 
