@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { Inject, Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository, In } from 'typeorm';
 import { Product, ProductStatus } from '@modules/catalog/domain/entities/product.entity';
@@ -15,6 +15,7 @@ import {
 import { formatTimeRange } from '@common/utils/date.util';
 import { decodeCursor, encodeCursor, createPaginatedResult } from '@common/utils/pagination.util';
 import { PaginatedResult } from '@common/types';
+import { IFavoriteRepository, FAVORITE_REPOSITORY } from '@modules/favorite/domain/repositories';
 
 @Injectable()
 export class DiscoveryService {
@@ -27,8 +28,10 @@ export class DiscoveryService {
     private readonly storeRepository: Repository<Store>,
     @InjectRepository(Category)
     private readonly categoryRepository: Repository<Category>,
+    @Inject(FAVORITE_REPOSITORY)
+    private readonly favoriteRepository: IFavoriteRepository,
     private readonly redisService: RedisService,
-  ) {}
+  ) { }
 
   async discoverProducts(
     dto: DiscoverProductsDto,
@@ -43,6 +46,17 @@ export class DiscoveryService {
     if (!cursor) {
       const cached = await this.redisService.get<DiscoveryProductResponseDto[]>(cacheKey);
       if (cached) {
+        // If user is logged in, we need to populate isFavorited from DB as cache doesn't have it specific to user
+        if (userId) {
+          const productIds = cached.map(p => p.id);
+          const favoriteProductIds = await this.favoriteRepository.getProductIdsByUserId(userId);
+          const favoriteSet = new Set(favoriteProductIds);
+
+          return createPaginatedResult(
+            cached.map(p => ({ ...p, isFavorited: favoriteSet.has(p.id) })),
+            limit
+          );
+        }
         return createPaginatedResult(cached, limit);
       }
     }
@@ -117,6 +131,13 @@ export class DiscoveryService {
 
     const { entities: products, raw } = await query.getRawAndEntities();
 
+    // Get favorites if user logged in
+    let favoriteSet = new Set<string>();
+    if (userId) {
+      const favoriteProductIds = await this.favoriteRepository.getProductIdsByUserId(userId);
+      favoriteSet = new Set(favoriteProductIds);
+    }
+
     // Map to response DTOs with distance
     const results: DiscoveryProductResponseDto[] = products.map((product, index) => ({
       id: product.id,
@@ -152,6 +173,7 @@ export class DiscoveryService {
         icon: product.category.icon,
       },
       distance: raw[index]?.distance ? parseFloat(raw[index].distance) : 0,
+      isFavorited: favoriteSet.has(product.id),
     }));
 
     // Cache first page results
