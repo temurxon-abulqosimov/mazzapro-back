@@ -90,7 +90,7 @@ export class CreateBookingUseCase {
       product.reserve(dto.quantity);
       await queryRunner.manager.save(product);
 
-      // Generate order number with retry logic for duplicates
+      // Generate order number with retry logic for duplicates using savepoints
       let orderNumber: string = '';
       let savedBooking: Booking | undefined;
       let booking: Booking | undefined;
@@ -100,6 +100,10 @@ export class CreateBookingUseCase {
 
       while (retryCount < maxRetries) {
         try {
+          // Create a savepoint before attempting to save
+          const savepointName = `booking_save_attempt_${retryCount}`;
+          await queryRunner.query(`SAVEPOINT ${savepointName}`);
+
           orderNumber = await this.bookingRepository.generateOrderNumber();
 
           // Create booking
@@ -134,12 +138,20 @@ export class CreateBookingUseCase {
 
           // Save booking (pending) - this may fail with duplicate order number
           savedBooking = await queryRunner.manager.save(booking);
+
+          // Release the savepoint on success
+          await queryRunner.query(`RELEASE SAVEPOINT ${savepointName}`);
           break; // Success, exit retry loop
         } catch (error) {
           // Check if it's a duplicate order number error
           if (error?.code === '23505' && error?.constraint === 'UQ_bookings_order_number') {
             retryCount++;
             this.logger.warn(`Duplicate order number ${orderNumber}, retrying (${retryCount}/${maxRetries})`);
+
+            // Rollback to savepoint to recover from the error
+            const savepointName = `booking_save_attempt_${retryCount - 1}`;
+            await queryRunner.query(`ROLLBACK TO SAVEPOINT ${savepointName}`);
+
             if (retryCount >= maxRetries) {
               throw new Error(`Failed to generate unique order number after ${maxRetries} attempts`);
             }
