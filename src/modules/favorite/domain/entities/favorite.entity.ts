@@ -10,7 +10,7 @@ import {
 } from 'typeorm';
 import { User } from '@modules/identity/domain/entities/user.entity';
 import { Store } from '@modules/store/domain/entities/store.entity';
-import { Product } from '@modules/product/domain/entities/product.entity';
+import { Product } from '@modules/catalog/domain/entities/product.entity';
 
 export enum FavoriteType {
   STORE = 'STORE',
