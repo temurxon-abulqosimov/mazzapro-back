@@ -4,6 +4,7 @@ import { ConfigModule } from '@nestjs/config';
 
 // Domain
 import { Notification } from './domain/entities/notification.entity';
+import { NotificationPreference } from './domain/entities/notification-preference.entity';
 import { NOTIFICATION_REPOSITORY } from './domain/repositories';
 
 // Infrastructure
@@ -23,7 +24,7 @@ import { NotificationController } from './presentation/controllers';
 
 @Module({
   imports: [
-    TypeOrmModule.forFeature([Notification]),
+    TypeOrmModule.forFeature([Notification, NotificationPreference]),
     ConfigModule,
   ],
   controllers: [NotificationController],
@@ -39,7 +40,7 @@ import { NotificationController } from './presentation/controllers';
       provide: DEVICE_TOKEN_REPOSITORY,
       useValue: {
         findActiveByUserId: async () => [],
-        deactivateTokens: async () => {},
+        deactivateTokens: async () => { },
       },
     },
 
@@ -57,4 +58,4 @@ import { NotificationController } from './presentation/controllers';
     NOTIFICATION_REPOSITORY,
   ],
 })
-export class NotificationModule {}
+export class NotificationModule { }

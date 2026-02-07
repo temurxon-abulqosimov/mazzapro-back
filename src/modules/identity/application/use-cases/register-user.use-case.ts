@@ -32,7 +32,7 @@ export class RegisterUserUseCase {
     private readonly refreshTokenRepository: IRefreshTokenRepository,
     private readonly passwordService: PasswordService,
     private readonly jwtTokenService: JwtTokenService,
-  ) {}
+  ) { }
 
   async execute(dto: RegisterDto): Promise<RegisterResult> {
     // Check if email already exists
@@ -51,6 +51,8 @@ export class RegisterUserUseCase {
     user.fullName = dto.fullName;
     user.marketId = dto.marketId;
     user.role = UserRole.CONSUMER;
+    if (dto.lat !== undefined) user.lat = dto.lat;
+    if (dto.lng !== undefined) user.lng = dto.lng;
 
     // Save user
     const savedUser = await this.userRepository.save(user);

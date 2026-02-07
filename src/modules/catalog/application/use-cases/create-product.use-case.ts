@@ -1,4 +1,5 @@
 import { Injectable, Inject } from '@nestjs/common';
+import { EventEmitter2 } from '@nestjs/event-emitter';
 import { Product, ProductStatus } from '../../domain/entities/product.entity';
 import { ProductImage } from '../../domain/entities/product-image.entity';
 import {
@@ -14,6 +15,7 @@ import {
   STORE_REPOSITORY,
 } from '@modules/store/domain/repositories/store.repository.interface';
 import { CreateProductDto } from '../dto/product.dto';
+import { ProductCreatedEvent } from '../../domain/events/product-created.event';
 import {
   EntityNotFoundException,
   DomainException,
@@ -30,7 +32,8 @@ export class CreateProductUseCase {
     private readonly sellerRepository: ISellerRepository,
     @Inject(STORE_REPOSITORY)
     private readonly storeRepository: IStoreRepository,
-  ) {}
+    private readonly eventEmitter: EventEmitter2,
+  ) { }
 
   async execute(userId: string, dto: CreateProductDto): Promise<Product> {
     // Get seller
@@ -51,11 +54,28 @@ export class CreateProductUseCase {
     // Validate pickup window
     const today = new Date();
     const pickupStart = parseTimeToDate(dto.pickupWindowStart, today);
-    const pickupEnd = parseTimeToDate(dto.pickupWindowEnd, today);
+    let pickupEnd = parseTimeToDate(dto.pickupWindowEnd, today);
 
-    if (pickupStart >= pickupEnd) {
-      throw new InvalidPickupWindowException('Pickup start must be before end');
+    // If end time is earlier than or equal to start time, assume it's the next day
+    if (pickupEnd <= pickupStart) {
+      pickupEnd = new Date(pickupEnd.getTime() + 24 * 60 * 60 * 1000); // Add 1 day
     }
+
+    if (pickupEnd <= new Date()) {
+      // If even with next day it's in the past (unlikely loop, but good safety),
+      // or if trying to set past time.
+      // Actually, we should probably allow immediate pickup if it's "now".
+      // But standard logic:
+    }
+
+    // Ensure window is in future
+    // We already check if pickupEnd <= now below.
+
+    /* 
+       Original check was:
+       if (pickupStart >= pickupEnd) { throw ... }
+       We removed this to allow overnight.
+    */
 
     if (pickupEnd <= new Date()) {
       throw new InvalidPickupWindowException('Pickup window must be in the future');
@@ -93,6 +113,21 @@ export class CreateProductUseCase {
       });
     }
 
-    return this.productRepository.save(product);
+    const savedProduct = await this.productRepository.save(product);
+
+    // Emit event for notifications
+    this.eventEmitter.emit(
+      'product.created',
+      new ProductCreatedEvent(
+        savedProduct.id,
+        savedProduct.storeId,
+        savedProduct.name,
+        savedProduct.originalPrice,
+        savedProduct.discountedPrice,
+        savedProduct.images && savedProduct.images.length > 0 ? savedProduct.images[0].url : null,
+      ),
+    );
+
+    return savedProduct;
   }
 }

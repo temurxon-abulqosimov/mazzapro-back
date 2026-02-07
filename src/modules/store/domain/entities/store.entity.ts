@@ -9,9 +9,11 @@ import {
   ManyToMany,
   JoinTable,
   JoinColumn,
+  OneToMany,
 } from 'typeorm';
 import { Seller } from './seller.entity';
 import { Category } from './category.entity';
+import { Follow } from './follow.entity';
 
 @Entity('stores')
 @Index(['lat', 'lng'])
@@ -74,6 +76,9 @@ export class Store {
 
   @Column({ name: 'is_open', default: true })
   isOpen: boolean;
+
+  @OneToMany(() => Follow, (follow) => follow.store)
+  follows: Follow[];
 
   @ManyToMany(() => Category)
   @JoinTable({

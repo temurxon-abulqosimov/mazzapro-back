@@ -1,7 +1,20 @@
-import { IsString, MinLength, MaxLength, IsOptional, IsUrl } from 'class-validator';
+import { IsString, MinLength, MaxLength, IsOptional, IsUrl, IsNumber, Min, Max } from 'class-validator';
 import { ApiPropertyOptional } from '@nestjs/swagger';
 
 export class UpdateProfileDto {
+  @ApiPropertyOptional({ example: 40.7128 })
+  @IsOptional()
+  @IsNumber()
+  @Min(-90)
+  @Max(90)
+  lat?: number;
+
+  @ApiPropertyOptional({ example: -74.0060 })
+  @IsOptional()
+  @IsNumber()
+  @Min(-180)
+  @Max(180)
+  lng?: number;
   @ApiPropertyOptional({ example: 'Alex J.' })
   @IsOptional()
   @IsString()

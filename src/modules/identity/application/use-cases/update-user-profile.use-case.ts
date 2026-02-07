@@ -12,7 +12,7 @@ export class UpdateUserProfileUseCase {
   constructor(
     @Inject(USER_REPOSITORY)
     private readonly userRepository: IUserRepository,
-  ) {}
+  ) { }
 
   async execute(userId: string, dto: UpdateProfileDto): Promise<User> {
     const user = await this.userRepository.findById(userId);
@@ -20,7 +20,7 @@ export class UpdateUserProfileUseCase {
       throw new EntityNotFoundException('User', userId);
     }
 
-    user.updateProfile(dto.fullName, dto.avatarUrl);
+    user.updateProfile(dto.fullName, dto.avatarUrl, dto.lat, dto.lng);
     return this.userRepository.save(user);
   }
 }

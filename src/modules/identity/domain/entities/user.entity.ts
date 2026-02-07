@@ -6,8 +6,11 @@ import {
   UpdateDateColumn,
   Index,
   OneToOne,
+  OneToMany,
 } from 'typeorm';
 import { UserRole } from '@common/types';
+import { Follow } from '@modules/store/domain/entities/follow.entity';
+import { NotificationPreference } from '@modules/notification/domain/entities/notification-preference.entity';
 
 @Entity('users')
 export class User {
@@ -62,10 +65,24 @@ export class User {
   @Column({ name: 'last_login_at', type: 'timestamp', nullable: true })
   lastLoginAt: Date | null;
 
+  @Column({ type: 'decimal', precision: 10, scale: 7, nullable: true })
+  lat: number | null;
+
+  @Column({ type: 'decimal', precision: 10, scale: 7, nullable: true })
+  lng: number | null;
+
+  @OneToMany(() => Follow, (follow) => follow.user)
+  follows: Follow[];
+
+  @OneToOne(() => NotificationPreference, (pref) => pref.user)
+  notificationPreferences: NotificationPreference;
+
   // Domain methods
-  updateProfile(fullName?: string, avatarUrl?: string): void {
+  updateProfile(fullName?: string, avatarUrl?: string, lat?: number, lng?: number): void {
     if (fullName) this.fullName = fullName;
     if (avatarUrl !== undefined) this.avatarUrl = avatarUrl;
+    if (lat !== undefined) this.lat = lat;
+    if (lng !== undefined) this.lng = lng;
   }
 
   promoteToSeller(): void {
@@ -111,10 +128,10 @@ export class User {
       nextThreshold === prevThreshold
         ? 100
         : Math.round(
-            ((this.mealsSaved - prevThreshold) /
-              (nextThreshold - prevThreshold)) *
-              100,
-          );
+          ((this.mealsSaved - prevThreshold) /
+            (nextThreshold - prevThreshold)) *
+          100,
+        );
 
     return {
       name: currentLevelName,

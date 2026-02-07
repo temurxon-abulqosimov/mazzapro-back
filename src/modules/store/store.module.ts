@@ -2,18 +2,20 @@ import { Module, forwardRef } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
 
 // Entities
-import { Category, Seller, Store } from './domain/entities';
+import { Category, Seller, Store, Follow } from './domain/entities';
 
 // Repositories
 import {
   CATEGORY_REPOSITORY,
   SELLER_REPOSITORY,
   STORE_REPOSITORY,
+  FOLLOW_REPOSITORY,
 } from './domain/repositories';
 import {
   TypeOrmCategoryRepository,
   TypeOrmSellerRepository,
   TypeOrmStoreRepository,
+  TypeOrmFollowRepository,
 } from './infrastructure/repositories';
 
 // Use Cases
@@ -23,6 +25,9 @@ import {
   GetSellerDashboardUseCase,
   GetStoreByIdUseCase,
   ToggleStoreStatusUseCase,
+  FollowStoreUseCase,
+  UnfollowStoreUseCase,
+  GetFollowedStoresUseCase,
 } from './application/use-cases';
 import {
   GetDashboardStatsUseCase,
@@ -43,7 +48,7 @@ import { BookingModule } from '@modules/booking/booking.module';
 
 @Module({
   imports: [
-    TypeOrmModule.forFeature([Category, Seller, Store]),
+    TypeOrmModule.forFeature([Category, Seller, Store, Follow]),
     forwardRef(() => IdentityModule),
     forwardRef(() => CatalogModule),
     forwardRef(() => BookingModule),
@@ -63,6 +68,10 @@ import { BookingModule } from '@modules/booking/booking.module';
       provide: STORE_REPOSITORY,
       useClass: TypeOrmStoreRepository,
     },
+    {
+      provide: FOLLOW_REPOSITORY,
+      useClass: TypeOrmFollowRepository,
+    },
 
     // Use Cases
     ApplySellerUseCase,
@@ -72,7 +81,15 @@ import { BookingModule } from '@modules/booking/booking.module';
     GetDashboardStatsUseCase,
     ToggleStoreStatusUseCase,
     GetLiveOrdersUseCase,
+    FollowStoreUseCase,
+    UnfollowStoreUseCase,
+    GetFollowedStoresUseCase,
   ],
-  exports: [CATEGORY_REPOSITORY, SELLER_REPOSITORY, STORE_REPOSITORY],
+  exports: [
+    CATEGORY_REPOSITORY,
+    SELLER_REPOSITORY,
+    STORE_REPOSITORY,
+    GetFollowedStoresUseCase // Export so UsersController can use it
+  ],
 })
-export class StoreModule {}
+export class StoreModule { }

@@ -26,9 +26,11 @@ import { FavoriteModule } from '@modules/favorite/favorite.module';
 import { MediaModule } from '@modules/media/media.module';
 import { AdminModule } from '@modules/admin/admin.module';
 import { SellerModule } from '@modules/seller/seller.module';
+import { ReviewModule } from '@modules/review/review.module';
 import { RedisModule } from '@common/redis/redis.module';
 import { HealthModule } from '@common/health';
 import { CommonModule } from '@common/common.module';
+import { EventEmitterModule } from '@nestjs/event-emitter';
 
 @Module({
   imports: [
@@ -109,6 +111,9 @@ import { CommonModule } from '@common/common.module';
     // Scheduling
     ScheduleModule.forRoot(),
 
+    // Event Emitter
+    EventEmitterModule.forRoot(),
+
     // Redis
     RedisModule,
 
@@ -130,6 +135,7 @@ import { CommonModule } from '@common/common.module';
     MediaModule,
     AdminModule,
     SellerModule,
+    ReviewModule,
   ],
   providers: [
     {
@@ -138,4 +144,4 @@ import { CommonModule } from '@common/common.module';
     },
   ],
 })
-export class AppModule {}
+export class AppModule { }

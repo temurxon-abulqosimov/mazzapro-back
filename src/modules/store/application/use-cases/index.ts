@@ -3,3 +3,6 @@ export * from './get-categories.use-case';
 export * from './get-seller-dashboard.use-case';
 export * from './get-store-by-id.use-case';
 export * from './toggle-store-status.use-case';
+export * from './follow-store.use-case';
+export * from './unfollow-store.use-case';
+export * from './get-followed-stores.use-case';

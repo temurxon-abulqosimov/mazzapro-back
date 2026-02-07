@@ -59,6 +59,9 @@ export class StoreDetailResponseDto extends StoreResponseDto {
   foodSavedKg: number;
 
   @ApiProperty()
+  isFollowing: boolean;
+
+  @ApiProperty()
   createdAt: Date;
 }
 

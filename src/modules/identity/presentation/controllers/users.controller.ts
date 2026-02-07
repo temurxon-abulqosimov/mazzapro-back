@@ -4,6 +4,7 @@ import {
   Patch,
   Body,
   UseGuards,
+  Req,
 } from '@nestjs/common';
 import {
   ApiTags,
@@ -13,7 +14,7 @@ import {
 } from '@nestjs/swagger';
 import { JwtAuthGuard } from '@common/guards/jwt-auth.guard';
 import { CurrentUser } from '@common/decorators/current-user.decorator';
-import { AuthenticatedUser } from '@common/types';
+import { AuthenticatedUser, AuthenticatedRequest } from '@common/types';
 import {
   UpdateProfileDto,
   UserProfileResponseDto,
@@ -22,6 +23,8 @@ import {
   GetUserProfileUseCase,
   UpdateUserProfileUseCase,
 } from '../../application/use-cases';
+import { GetFollowedStoresUseCase } from '../../../store/application/use-cases';
+import { StoreDetailResponseDto } from '../../../store/application/dto'; // Assuming we reuse this or creating a summary DTO
 
 @ApiTags('Users')
 @Controller('users')
@@ -31,7 +34,30 @@ export class UsersController {
   constructor(
     private readonly getUserProfileUseCase: GetUserProfileUseCase,
     private readonly updateUserProfileUseCase: UpdateUserProfileUseCase,
-  ) {}
+    private readonly getFollowedStoresUseCase: GetFollowedStoresUseCase,
+  ) { }
+
+  @Get('me/followed-stores')
+  @ApiOperation({ summary: 'Get followed stores' })
+  @ApiResponse({ status: 200, description: 'List of followed stores' })
+  async getFollowedStores(@Req() req: AuthenticatedRequest) {
+    const stores = await this.getFollowedStoresUseCase.execute(req.user.id);
+    return {
+      stores: stores.map(store => ({
+        id: store.id,
+        name: store.name,
+        rating: Number(store.rating),
+        imageUrl: store.imageUrl,
+        location: {
+          address: store.address,
+          city: store.city,
+          lat: Number(store.lat),
+          lng: Number(store.lng),
+        },
+        // Add other fields as necessary for the frontend list
+      }))
+    };
+  }
 
   @Get('me')
   @ApiOperation({ summary: 'Get current user profile' })

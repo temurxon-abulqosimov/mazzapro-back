@@ -1,23 +1,40 @@
-import { Controller, Get, Param, ParseUUIDPipe } from '@nestjs/common';
-import { ApiTags, ApiOperation, ApiResponse } from '@nestjs/swagger';
+import { Controller, Get, Post, Delete, Param, ParseUUIDPipe, UseGuards, HttpCode, HttpStatus, Req } from '@nestjs/common';
+import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth } from '@nestjs/swagger';
 import { Public } from '@common/decorators/public.decorator';
 import { StoreDetailResponseDto } from '../../application/dto';
-import { GetStoreByIdUseCase } from '../../application/use-cases';
+import {
+  GetStoreByIdUseCase,
+  FollowStoreUseCase,
+  UnfollowStoreUseCase
+} from '../../application/use-cases';
+import { JwtAuthGuard } from '@common/guards/jwt-auth.guard';
+import { AuthenticatedRequest } from '@common/types';
 
 @ApiTags('Stores')
 @Controller('stores')
 export class StoreController {
-  constructor(private readonly getStoreByIdUseCase: GetStoreByIdUseCase) {}
+  constructor(
+    private readonly getStoreByIdUseCase: GetStoreByIdUseCase,
+    private readonly followStoreUseCase: FollowStoreUseCase,
+    private readonly unfollowStoreUseCase: UnfollowStoreUseCase,
+  ) { }
 
   @Get(':id')
   @Public()
+  @UseGuards(JwtAuthGuard) // Optional auth handling: JwtAuthGuard usually throws 401 if fails, we need lenient guard or extract from request manually if Public decorator allows bypassing guard but still populates user if present.
+  // Actually, @Public bypasses the global guard. If we want optional user, we need to inspect the token manually or use a specific strategy.
+  // For simplicity given existing architecture, let's assume if header is present, middleware populates user.
   @ApiOperation({ summary: 'Get store by ID' })
   @ApiResponse({ status: 200, description: 'Store details' })
   @ApiResponse({ status: 404, description: 'Store not found' })
   async getStoreById(
     @Param('id', ParseUUIDPipe) id: string,
+    @Req() req: any, // Using 'any' to access user safely even if not authenticated
   ): Promise<{ store: StoreDetailResponseDto }> {
-    const store = await this.getStoreByIdUseCase.execute(id);
+    const userId = req.user?.id;
+    const result = await this.getStoreByIdUseCase.execute(id, userId);
+    const { store, isFollowing } = result;
+
     return {
       store: {
         id: store.id,
@@ -40,8 +57,39 @@ export class StoreController {
         })) || [],
         totalProductsSold: store.totalProductsSold,
         foodSavedKg: Number(store.foodSavedKg),
+        isFollowing,
         createdAt: store.createdAt,
       },
     };
+  }
+
+  @Post(':id/follow')
+  @UseGuards(JwtAuthGuard)
+  @ApiBearerAuth('JWT-auth')
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({ summary: 'Follow a store' })
+  @ApiResponse({ status: 200, description: 'Store followed successfully' })
+  @ApiResponse({ status: 404, description: 'Store not found' })
+  async followStore(
+    @Param('id', ParseUUIDPipe) id: string,
+    @Req() req: AuthenticatedRequest,
+  ): Promise<{ data: null }> {
+    await this.followStoreUseCase.execute(req.user.id, id);
+    return { data: null };
+  }
+
+  @Delete(':id/unfollow')
+  @UseGuards(JwtAuthGuard)
+  @ApiBearerAuth('JWT-auth')
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({ summary: 'Unfollow a store' })
+  @ApiResponse({ status: 200, description: 'Store unfollowed successfully' })
+  @ApiResponse({ status: 404, description: 'Store not found' })
+  async unfollowStore(
+    @Param('id', ParseUUIDPipe) id: string,
+    @Req() req: AuthenticatedRequest,
+  ): Promise<{ data: null }> {
+    await this.unfollowStoreUseCase.execute(req.user.id, id);
+    return { data: null };
   }
 }

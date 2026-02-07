@@ -5,8 +5,12 @@ import {
   MaxLength,
   IsUUID,
   Matches,
+  IsNumber,
+  IsOptional,
+  Min,
+  Max,
 } from 'class-validator';
-import { ApiProperty } from '@nestjs/swagger';
+import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 
 export class RegisterDto {
   @ApiProperty({ example: 'user@example.com' })
@@ -32,4 +36,18 @@ export class RegisterDto {
   @ApiProperty({ example: 'uuid' })
   @IsUUID()
   marketId: string;
+
+  @ApiPropertyOptional({ example: 40.7128 })
+  @IsOptional()
+  @IsNumber()
+  @Min(-90)
+  @Max(90)
+  lat?: number;
+
+  @ApiPropertyOptional({ example: -74.0060 })
+  @IsOptional()
+  @IsNumber()
+  @Min(-180)
+  @Max(180)
+  lng?: number;
 }
