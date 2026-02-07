@@ -5,3 +5,4 @@ export * from './logout-user.use-case';
 export * from './register-device-token.use-case';
 export * from './get-user-profile.use-case';
 export * from './update-user-profile.use-case';
+export * from './google-auth.use-case';

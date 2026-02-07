@@ -34,6 +34,7 @@ import {
   RegisterDeviceTokenUseCase,
   GetUserProfileUseCase,
   UpdateUserProfileUseCase,
+  GoogleAuthUseCase,
 } from './application/use-cases';
 
 // Controllers
@@ -87,6 +88,7 @@ import { StoreModule } from '../store/store.module';
     RegisterDeviceTokenUseCase,
     GetUserProfileUseCase,
     UpdateUserProfileUseCase,
+    GoogleAuthUseCase,
   ],
   exports: [
     USER_REPOSITORY,

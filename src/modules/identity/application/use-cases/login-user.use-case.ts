@@ -53,6 +53,11 @@ export class LoginUserUseCase {
       throw new InvalidCredentialsException();
     }
 
+    // Check if user has a password (OAuth users don't)
+    if (!user.passwordHash) {
+      throw new InvalidCredentialsException();
+    }
+
     // Verify password
     const isValid = await this.passwordService.verify(
       dto.password,

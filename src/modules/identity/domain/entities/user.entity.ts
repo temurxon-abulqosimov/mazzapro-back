@@ -21,8 +21,8 @@ export class User {
   @Index()
   email: string;
 
-  @Column({ name: 'password_hash' })
-  passwordHash: string;
+  @Column({ name: 'password_hash', nullable: true })
+  passwordHash: string | null;
 
   @Column({ name: 'full_name' })
   fullName: string;
@@ -55,6 +55,13 @@ export class User {
 
   @Column({ name: 'email_verified', default: false })
   emailVerified: boolean;
+
+  @Column({ name: 'google_id', nullable: true, unique: true })
+  @Index()
+  googleId: string | null;
+
+  @Column({ name: 'auth_provider', default: 'email' })
+  authProvider: 'email' | 'google';
 
   @CreateDateColumn({ name: 'created_at' })
   createdAt: Date;

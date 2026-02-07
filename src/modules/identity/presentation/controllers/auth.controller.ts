@@ -23,6 +23,7 @@ import {
   RefreshTokenDto,
   RegisterDeviceTokenDto,
   AuthResponseDto,
+  GoogleAuthDto,
 } from '../../application/dto';
 import {
   RegisterUserUseCase,
@@ -30,6 +31,7 @@ import {
   RefreshTokensUseCase,
   LogoutUserUseCase,
   RegisterDeviceTokenUseCase,
+  GoogleAuthUseCase,
 } from '../../application/use-cases';
 import { RefreshResult } from '../../application/use-cases/refresh-tokens.use-case';
 
@@ -42,6 +44,7 @@ export class AuthController {
     private readonly refreshTokensUseCase: RefreshTokensUseCase,
     private readonly logoutUserUseCase: LogoutUserUseCase,
     private readonly registerDeviceTokenUseCase: RegisterDeviceTokenUseCase,
+    private readonly googleAuthUseCase: GoogleAuthUseCase,
   ) {}
 
   @Post('register')
@@ -86,6 +89,30 @@ export class AuthController {
         createdAt: result.user.createdAt,
       },
       tokens: result.tokens,
+    };
+  }
+
+  @Post('google')
+  @Public()
+  @HttpCode(HttpStatus.OK)
+  @Throttle({ default: { limit: 10, ttl: 60000 } })
+  @ApiOperation({ summary: 'Sign in with Google' })
+  @ApiResponse({ status: 200, description: 'Google sign-in successful' })
+  @ApiResponse({ status: 401, description: 'Invalid Google ID token' })
+  async googleAuth(@Body() dto: GoogleAuthDto): Promise<AuthResponseDto & { isNewUser: boolean }> {
+    const result = await this.googleAuthUseCase.execute(dto);
+    return {
+      user: {
+        id: result.user.id,
+        email: result.user.email,
+        fullName: result.user.fullName,
+        avatarUrl: result.user.avatarUrl,
+        role: result.user.role,
+        marketId: result.user.marketId,
+        createdAt: result.user.createdAt,
+      },
+      tokens: result.tokens,
+      isNewUser: result.isNewUser,
     };
   }
 

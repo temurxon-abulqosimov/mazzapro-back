@@ -10,3 +10,5 @@ export { AddCreatedAtToCategories1738248000000 } from './migrations/173824800000
 export { AddIsOpenToStores1738728000000 } from './migrations/1738728000000-AddIsOpenToStores';
 export { AddProductSupportToFavorites1738830000000 } from './migrations/1738830000000-AddProductSupportToFavorites';
 export { FixFavoritesConstraints1738930000000 } from './migrations/1738930000000-FixFavoritesConstraints';
+export { AddFollowsAndNotificationPreferences1770289085165 } from './migrations/1770289085165-AddFollowsAndNotificationPreferences';
+export { AddGoogleAuthFields1770389085165 } from './migrations/1770389085165-AddGoogleAuthFields';

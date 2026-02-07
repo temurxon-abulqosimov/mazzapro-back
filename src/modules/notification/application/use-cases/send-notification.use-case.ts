@@ -6,14 +6,10 @@ import {
 import { Notification, NotificationType } from '../../domain/entities/notification.entity';
 import { FcmService, PushNotificationPayload } from '../../infrastructure/services';
 import { CreateNotificationDto, NotificationTemplates } from '../dto';
-
-// Device token repository interface (from Identity module)
-export interface IDeviceTokenRepository {
-  findActiveByUserId(userId: string): Promise<{ token: string; platform: string }[]>;
-  deactivateTokens(tokens: string[]): Promise<void>;
-}
-
-export const DEVICE_TOKEN_REPOSITORY = Symbol('IDeviceTokenRepository');
+import {
+  IDeviceTokenRepository,
+  DEVICE_TOKEN_REPOSITORY,
+} from '@modules/identity/domain/repositories';
 
 @Injectable()
 export class SendNotificationUseCase {
@@ -104,7 +100,7 @@ export class SendNotificationUseCase {
 
     // Deactivate invalid tokens
     if (result.invalidTokens.length > 0) {
-      await this.deviceTokenRepository.deactivateTokens(result.invalidTokens);
+      await this.deactivateTokens(result.invalidTokens);
     }
 
     return {
@@ -147,17 +143,23 @@ export class SendNotificationUseCase {
       if (tokens.length === 1) {
         const result = await this.fcmService.sendToDevice(tokens[0], payload);
         if (!result.success && result.error === 'INVALID_TOKEN') {
-          await this.deviceTokenRepository.deactivateTokens([tokens[0]]);
+          await this.deviceTokenRepository.deactivateToken(tokens[0]);
         }
       } else {
         const result = await this.fcmService.sendToMultipleDevices(tokens, payload);
         if (result.invalidTokens.length > 0) {
-          await this.deviceTokenRepository.deactivateTokens(result.invalidTokens);
+          await this.deactivateTokens(result.invalidTokens);
         }
       }
     } catch (error) {
       this.logger.error(`Failed to send push to user ${userId}: ${error.message}`);
     }
+  }
+
+  private async deactivateTokens(tokens: string[]): Promise<void> {
+    await Promise.all(
+      tokens.map((token) => this.deviceTokenRepository.deactivateToken(token)),
+    );
   }
 
   private stringifyData(data?: Record<string, any>): Record<string, string> {

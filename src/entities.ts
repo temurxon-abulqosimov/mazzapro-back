@@ -13,4 +13,5 @@ export { Market } from './modules/market/domain/entities/market.entity';
 export { Category } from './modules/store/domain/entities/category.entity';
 export { Store } from './modules/store/domain/entities/store.entity';
 export { Seller } from './modules/store/domain/entities/seller.entity';
+export { Follow } from './modules/store/domain/entities/follow.entity';
 export { Media } from './modules/media/domain/entities/media.entity';
