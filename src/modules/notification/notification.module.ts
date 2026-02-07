@@ -1,4 +1,4 @@
-import { Module } from '@nestjs/common';
+import { Module, forwardRef } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { ConfigModule } from '@nestjs/config';
 
@@ -29,8 +29,8 @@ import { IdentityModule } from '../identity/identity.module';
   imports: [
     TypeOrmModule.forFeature([Notification, NotificationPreference]),
     ConfigModule,
-    StoreModule,
-    IdentityModule,
+    forwardRef(() => StoreModule),
+    forwardRef(() => IdentityModule),
   ],
   controllers: [NotificationController],
   providers: [
