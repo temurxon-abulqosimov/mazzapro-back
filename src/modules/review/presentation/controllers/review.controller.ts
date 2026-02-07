@@ -68,12 +68,16 @@ export class ReviewController {
         const total = await this.reviewRepository.countByStoreId(storeId);
 
         return {
-            reviews,
+            data: reviews,
             meta: {
-                total,
-                page,
-                limit,
-                pages: Math.ceil(total / limit),
+                pagination: {
+                    total,
+                    page,
+                    limit,
+                    pages: Math.ceil(total / limit),
+                    hasMore: page < Math.ceil(total / limit),
+                    cursor: null,
+                }
             },
         };
     }

@@ -89,6 +89,7 @@ import { BookingModule } from '@modules/booking/booking.module';
     CATEGORY_REPOSITORY,
     SELLER_REPOSITORY,
     STORE_REPOSITORY,
+    FOLLOW_REPOSITORY,
     GetFollowedStoresUseCase // Export so UsersController can use it
   ],
 })

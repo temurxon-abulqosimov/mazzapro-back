@@ -10,22 +10,27 @@ import { NOTIFICATION_REPOSITORY } from './domain/repositories';
 // Infrastructure
 import { TypeOrmNotificationRepository } from './infrastructure/repositories';
 import { FcmService } from './infrastructure/services';
+import { ExpoPushService } from './infrastructure/services/expo-push.service';
+import { ProductCreatedListener } from './infrastructure/listeners/product-created.listener';
 
 // Application
 import {
   GetNotificationsUseCase,
   MarkNotificationsReadUseCase,
   SendNotificationUseCase,
-  DEVICE_TOKEN_REPOSITORY,
 } from './application/use-cases';
 
 // Presentation
 import { NotificationController } from './presentation/controllers';
+import { StoreModule } from '../store/store.module';
+import { IdentityModule } from '../identity/identity.module';
 
 @Module({
   imports: [
     TypeOrmModule.forFeature([Notification, NotificationPreference]),
     ConfigModule,
+    StoreModule,
+    IdentityModule,
   ],
   controllers: [NotificationController],
   providers: [
@@ -34,18 +39,11 @@ import { NotificationController } from './presentation/controllers';
       provide: NOTIFICATION_REPOSITORY,
       useClass: TypeOrmNotificationRepository,
     },
-    // Note: DEVICE_TOKEN_REPOSITORY should be provided by IdentityModule
-    // For now, we'll create a placeholder that will be overridden
-    {
-      provide: DEVICE_TOKEN_REPOSITORY,
-      useValue: {
-        findActiveByUserId: async () => [],
-        deactivateTokens: async () => { },
-      },
-    },
 
     // Services
     FcmService,
+    ExpoPushService,
+    ProductCreatedListener,
 
     // Use Cases
     GetNotificationsUseCase,
@@ -55,6 +53,7 @@ import { NotificationController } from './presentation/controllers';
   exports: [
     SendNotificationUseCase,
     FcmService,
+    ExpoPushService,
     NOTIFICATION_REPOSITORY,
   ],
 })

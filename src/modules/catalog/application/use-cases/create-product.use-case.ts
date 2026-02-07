@@ -121,6 +121,7 @@ export class CreateProductUseCase {
       new ProductCreatedEvent(
         savedProduct.id,
         savedProduct.storeId,
+        store.name,
         savedProduct.name,
         savedProduct.originalPrice,
         savedProduct.discountedPrice,
