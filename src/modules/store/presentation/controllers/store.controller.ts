@@ -8,6 +8,7 @@ import {
   UnfollowStoreUseCase
 } from '../../application/use-cases';
 import { JwtAuthGuard } from '@common/guards/jwt-auth.guard';
+import { OptionalJwtAuthGuard } from '@common/guards/optional-jwt-auth.guard';
 import { AuthenticatedRequest } from '@common/types';
 
 @ApiTags('Stores')
@@ -20,10 +21,7 @@ export class StoreController {
   ) { }
 
   @Get(':id')
-  @Public()
-  @UseGuards(JwtAuthGuard) // Optional auth handling: JwtAuthGuard usually throws 401 if fails, we need lenient guard or extract from request manually if Public decorator allows bypassing guard but still populates user if present.
-  // Actually, @Public bypasses the global guard. If we want optional user, we need to inspect the token manually or use a specific strategy.
-  // For simplicity given existing architecture, let's assume if header is present, middleware populates user.
+  @UseGuards(OptionalJwtAuthGuard)
   @ApiOperation({ summary: 'Get store by ID' })
   @ApiResponse({ status: 200, description: 'Store details' })
   @ApiResponse({ status: 404, description: 'Store not found' })

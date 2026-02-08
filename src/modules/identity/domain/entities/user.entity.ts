@@ -21,7 +21,7 @@ export class User {
   @Index()
   email: string;
 
-  @Column({ name: 'password_hash', nullable: true })
+  @Column({ name: 'password_hash', type: 'varchar', nullable: true })
   passwordHash: string | null;
 
   @Column({ name: 'full_name' })
@@ -60,7 +60,7 @@ export class User {
   @Index()
   googleId: string | null;
 
-  @Column({ name: 'auth_provider', default: 'email' })
+  @Column({ name: 'auth_provider', type: 'varchar', length: 20, default: 'email' })
   authProvider: 'email' | 'google';
 
   @CreateDateColumn({ name: 'created_at' })

@@ -6,6 +6,7 @@ export { RefreshToken } from './modules/identity/domain/entities/refresh-token.e
 export { Payment } from './modules/booking/domain/entities/payment.entity';
 export { Booking } from './modules/booking/domain/entities/booking.entity';
 export { Notification } from './modules/notification/domain/entities/notification.entity';
+export { NotificationPreference } from './modules/notification/domain/entities/notification-preference.entity';
 export { ProductImage } from './modules/catalog/domain/entities/product-image.entity';
 export { Product } from './modules/catalog/domain/entities/product.entity';
 export { Favorite } from './modules/favorite/domain/entities/favorite.entity';
