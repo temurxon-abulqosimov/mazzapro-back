@@ -54,33 +54,19 @@ export class CreateProductUseCase {
     }
 
     // Validate pickup window
-    const today = new Date();
-    const pickupStart = parseTimeToDate(dto.pickupWindowStart, today);
-    let pickupEnd = parseTimeToDate(dto.pickupWindowEnd, today);
+    const now = new Date();
+    let pickupStart = parseTimeToDate(dto.pickupWindowStart, now);
+    let pickupEnd = parseTimeToDate(dto.pickupWindowEnd, now);
 
     // If end time is earlier than or equal to start time, assume it's the next day
     if (pickupEnd <= pickupStart) {
       pickupEnd = new Date(pickupEnd.getTime() + 24 * 60 * 60 * 1000); // Add 1 day
     }
 
-    if (pickupEnd <= new Date()) {
-      // If even with next day it's in the past (unlikely loop, but good safety),
-      // or if trying to set past time.
-      // Actually, we should probably allow immediate pickup if it's "now".
-      // But standard logic:
-    }
-
-    // Ensure window is in future
-    // We already check if pickupEnd <= now below.
-
-    /* 
-       Original check was:
-       if (pickupStart >= pickupEnd) { throw ... }
-       We removed this to allow overnight.
-    */
-
-    if (pickupEnd <= new Date()) {
-      throw new InvalidPickupWindowException('Pickup window must be in the future');
+    // If the pickup window has already passed today, shift to tomorrow
+    if (pickupEnd <= now) {
+      pickupStart = new Date(pickupStart.getTime() + 24 * 60 * 60 * 1000);
+      pickupEnd = new Date(pickupEnd.getTime() + 24 * 60 * 60 * 1000);
     }
 
     // Validate pricing
