@@ -1,4 +1,4 @@
-import { Inject, Injectable } from '@nestjs/common';
+import { Inject, Injectable, Logger } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository, In } from 'typeorm';
 import { Product, ProductStatus } from '@modules/catalog/domain/entities/product.entity';
@@ -19,6 +19,7 @@ import { IFavoriteRepository, FAVORITE_REPOSITORY } from '@modules/favorite/doma
 
 @Injectable()
 export class DiscoveryService {
+  private readonly logger = new Logger(DiscoveryService.name);
   private readonly CACHE_TTL = 10; // 10 seconds
 
   constructor(
@@ -38,6 +39,13 @@ export class DiscoveryService {
     userId?: string,
   ): Promise<PaginatedResult<DiscoveryProductResponseDto>> {
     const { lat, lng, radius = 5, category, categories, minPrice, maxPrice, sort, cursor, limit = 20 } = dto;
+
+    this.logger.log(`Discovery request: lat=${lat}, lng=${lng}, radius=${radius}, category=${category}`);
+
+    // Debug: Count all products and active products
+    const totalProducts = await this.productRepository.count();
+    const activeProducts = await this.productRepository.count({ where: { status: ProductStatus.ACTIVE } });
+    this.logger.log(`Total products in DB: ${totalProducts}, Active products: ${activeProducts}`);
 
     // Build cache key
     const cacheKey = `discovery:products:${lat.toFixed(3)}:${lng.toFixed(3)}:${radius}:${category || ''}:${sort}`;
@@ -132,6 +140,17 @@ export class DiscoveryService {
     query.take(limit + 1);
 
     const { entities: products, raw } = await query.getRawAndEntities();
+
+    this.logger.log(`Discovery query returned ${products.length} products`);
+    if (products.length === 0) {
+      // Debug: Check why no products returned
+      const expiredCount = await this.productRepository
+        .createQueryBuilder('p')
+        .where('p.status = :status', { status: ProductStatus.ACTIVE })
+        .andWhere('p.expires_at <= :now', { now: new Date() })
+        .getCount();
+      this.logger.log(`Active but expired products: ${expiredCount}`);
+    }
 
     // Get favorites if user logged in
     let favoriteSet = new Set<string>();

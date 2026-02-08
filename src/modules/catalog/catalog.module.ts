@@ -24,11 +24,13 @@ import {
 
 // External modules
 import { StoreModule } from '@modules/store/store.module';
+import { RedisModule } from '@common/redis/redis.module';
 
 @Module({
   imports: [
     TypeOrmModule.forFeature([Product, ProductImage]),
     forwardRef(() => StoreModule),
+    RedisModule,
   ],
   controllers: [ProductController, SellerProductController],
   providers: [
