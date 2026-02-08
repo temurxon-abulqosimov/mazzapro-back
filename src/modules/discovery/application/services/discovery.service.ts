@@ -109,10 +109,10 @@ export class DiscoveryService {
       query.andWhere('product.discounted_price <= :maxPrice', { maxPrice });
     }
 
-    // Sorting
+    // Sorting - use full formula instead of alias to avoid TypeORM bug with getRawAndEntities
     switch (sort) {
       case SortOption.DISTANCE:
-        query.orderBy('distance', 'ASC');
+        query.orderBy(distanceFormula, 'ASC');
         break;
       case SortOption.PRICE_ASC:
         query.orderBy('product.discounted_price', 'ASC');
@@ -123,7 +123,7 @@ export class DiscoveryService {
       case SortOption.RECOMMENDED:
       default:
         // Recommended: combination of distance, rating, and freshness
-        query.orderBy('distance', 'ASC')
+        query.orderBy(distanceFormula, 'ASC')
           .addOrderBy('store.rating', 'DESC')
           .addOrderBy('product.created_at', 'DESC');
         break;
@@ -211,18 +211,17 @@ export class DiscoveryService {
   ): Promise<PaginatedResult<any>> {
     const { lat, lng, radius = 5, category, hasAvailability, cursor, limit = 20 } = dto;
 
+    const storeDistanceFormula = `(6371 * acos(cos(radians(:lat)) * cos(radians(store.lat)) * cos(radians(store.lng) - radians(:lng)) + sin(radians(:lat)) * sin(radians(store.lat))))`;
+
     const query = this.storeRepository
       .createQueryBuilder('store')
       .leftJoinAndSelect('store.categories', 'category')
-      .addSelect(
-        `(6371 * acos(cos(radians(:lat)) * cos(radians(store.lat)) * cos(radians(store.lng) - radians(:lng)) + sin(radians(:lat)) * sin(radians(store.lat))))`,
-        'distance',
-      )
+      .addSelect(storeDistanceFormula, 'distance')
       .where('store.is_active = :isActive', { isActive: true })
-      .having('distance <= :radius', { radius })
+      .having(`${storeDistanceFormula} <= :radius`, { radius })
       .setParameter('lat', lat)
       .setParameter('lng', lng)
-      .orderBy('distance', 'ASC');
+      .orderBy(storeDistanceFormula, 'ASC');
 
     if (category) {
       query.andWhere('category.slug = :category', { category });
@@ -374,16 +373,14 @@ export class DiscoveryService {
       );
 
     // Add geo-filtering if lat/lng provided
+    const searchDistanceFormula = `(6371 * acos(cos(radians(:lat)) * cos(radians(store.lat)) * cos(radians(store.lng) - radians(:lng)) + sin(radians(:lat)) * sin(radians(store.lat))))`;
     if (lat !== undefined && lng !== undefined) {
       productQuery
-        .addSelect(
-          `(6371 * acos(cos(radians(:lat)) * cos(radians(store.lat)) * cos(radians(store.lng) - radians(:lng)) + sin(radians(:lat)) * sin(radians(store.lat))))`,
-          'distance',
-        )
-        .having('distance <= :radius', { radius })
+        .addSelect(searchDistanceFormula, 'distance')
+        .having(`${searchDistanceFormula} <= :radius`, { radius })
         .setParameter('lat', lat)
         .setParameter('lng', lng)
-        .orderBy('distance', 'ASC');
+        .orderBy(searchDistanceFormula, 'ASC');
     } else {
       productQuery.orderBy('product.created_at', 'DESC');
     }
@@ -442,14 +439,11 @@ export class DiscoveryService {
 
     if (lat !== undefined && lng !== undefined) {
       storeQuery
-        .addSelect(
-          `(6371 * acos(cos(radians(:lat)) * cos(radians(store.lat)) * cos(radians(store.lng) - radians(:lng)) + sin(radians(:lat)) * sin(radians(store.lat))))`,
-          'distance',
-        )
-        .having('distance <= :radius', { radius })
+        .addSelect(searchDistanceFormula, 'distance')
+        .having(`${searchDistanceFormula} <= :radius`, { radius })
         .setParameter('lat', lat)
         .setParameter('lng', lng)
-        .orderBy('distance', 'ASC');
+        .orderBy(searchDistanceFormula, 'ASC');
     } else {
       storeQuery.orderBy('store.rating', 'DESC');
     }
