@@ -109,23 +109,17 @@ export class DiscoveryService {
       query.andWhere('product.discounted_price <= :maxPrice', { maxPrice });
     }
 
-    // Sorting - use full formula instead of alias to avoid TypeORM bug with getRawAndEntities
+    // Basic ordering for non-distance sorts (distance sorted in JS due to TypeORM limitation)
     switch (sort) {
-      case SortOption.DISTANCE:
-        query.orderBy(distanceFormula, 'ASC');
-        break;
       case SortOption.PRICE_ASC:
         query.orderBy('product.discounted_price', 'ASC');
         break;
       case SortOption.PRICE_DESC:
         query.orderBy('product.discounted_price', 'DESC');
         break;
-      case SortOption.RECOMMENDED:
       default:
-        // Recommended: combination of distance, rating, and freshness
-        query.orderBy(distanceFormula, 'ASC')
-          .addOrderBy('store.rating', 'DESC')
-          .addOrderBy('product.created_at', 'DESC');
+        // Default order by created_at, will re-sort by distance in JS
+        query.orderBy('product.created_at', 'DESC');
         break;
     }
 
@@ -137,7 +131,8 @@ export class DiscoveryService {
       }
     }
 
-    query.take(limit + 1);
+    // Fetch more than needed for distance-based sorting
+    query.take(limit * 2);
 
     const { entities: products, raw } = await query.getRawAndEntities();
 
@@ -160,7 +155,7 @@ export class DiscoveryService {
     }
 
     // Map to response DTOs with distance
-    const results: DiscoveryProductResponseDto[] = products.map((product, index) => ({
+    let results: DiscoveryProductResponseDto[] = products.map((product, index) => ({
       id: product.id,
       name: product.name,
       description: product.description,
@@ -197,6 +192,21 @@ export class DiscoveryService {
       isFavorited: favoriteSet.has(product.id),
     }));
 
+    // Sort by distance for DISTANCE and RECOMMENDED sorts
+    if (sort === SortOption.DISTANCE || sort === SortOption.RECOMMENDED || !sort) {
+      results.sort((a, b) => {
+        // Primary: distance
+        const distDiff = a.distance - b.distance;
+        if (sort === SortOption.DISTANCE) return distDiff;
+        // For recommended: distance, then rating, then recency (already sorted by created_at)
+        if (distDiff !== 0) return distDiff;
+        return b.store.rating - a.store.rating;
+      });
+    }
+
+    // Slice to limit after sorting
+    results = results.slice(0, limit + 1);
+
     // Cache first page results
     if (!cursor && results.length > 0) {
       await this.redisService.set(cacheKey, results.slice(0, limit), this.CACHE_TTL);
@@ -218,10 +228,10 @@ export class DiscoveryService {
       .leftJoinAndSelect('store.categories', 'category')
       .addSelect(storeDistanceFormula, 'distance')
       .where('store.is_active = :isActive', { isActive: true })
-      .having(`${storeDistanceFormula} <= :radius`, { radius })
+      .andWhere(`${storeDistanceFormula} <= :radius`, { radius })
       .setParameter('lat', lat)
       .setParameter('lng', lng)
-      .orderBy(storeDistanceFormula, 'ASC');
+      .orderBy('store.rating', 'DESC'); // Sort by distance in JS
 
     if (category) {
       query.andWhere('category.slug = :category', { category });
@@ -234,7 +244,7 @@ export class DiscoveryService {
       }
     }
 
-    query.take(limit + 1);
+    query.take(limit * 2);
 
     const { entities: stores, raw } = await query.getRawAndEntities();
 
@@ -277,6 +287,12 @@ export class DiscoveryService {
     if (hasAvailability) {
       results = results.filter(r => r.availableProducts > 0);
     }
+
+    // Sort by distance
+    results.sort((a, b) => a.distance - b.distance);
+
+    // Slice to limit
+    results = results.slice(0, limit + 1);
 
     return createPaginatedResult(results, limit, (item) => item.id);
   }
@@ -374,18 +390,16 @@ export class DiscoveryService {
 
     // Add geo-filtering if lat/lng provided
     const searchDistanceFormula = `(6371 * acos(cos(radians(:lat)) * cos(radians(store.lat)) * cos(radians(store.lng) - radians(:lng)) + sin(radians(:lat)) * sin(radians(store.lat))))`;
-    if (lat !== undefined && lng !== undefined) {
+    const hasGeo = lat !== undefined && lng !== undefined;
+    if (hasGeo) {
       productQuery
         .addSelect(searchDistanceFormula, 'distance')
-        .having(`${searchDistanceFormula} <= :radius`, { radius })
+        .andWhere(`${searchDistanceFormula} <= :radius`, { radius })
         .setParameter('lat', lat)
-        .setParameter('lng', lng)
-        .orderBy(searchDistanceFormula, 'ASC');
-    } else {
-      productQuery.orderBy('product.created_at', 'DESC');
+        .setParameter('lng', lng);
     }
-
-    productQuery.take(limit);
+    productQuery.orderBy('product.created_at', 'DESC');
+    productQuery.take(limit * 2);
 
     const { entities: products, raw: productRaw } = await productQuery.getRawAndEntities();
 
@@ -427,6 +441,13 @@ export class DiscoveryService {
         : 0,
     }));
 
+    // Sort by distance if geo-filtering was applied, then slice
+    let sortedProducts = productResults;
+    if (hasGeo) {
+      sortedProducts = [...productResults].sort((a, b) => a.distance - b.distance);
+    }
+    sortedProducts = sortedProducts.slice(0, limit);
+
     // Search stores
     const storeQuery = this.storeRepository
       .createQueryBuilder('store')
@@ -437,22 +458,19 @@ export class DiscoveryService {
         { searchTerm },
       );
 
-    if (lat !== undefined && lng !== undefined) {
+    if (hasGeo) {
       storeQuery
         .addSelect(searchDistanceFormula, 'distance')
-        .having(`${searchDistanceFormula} <= :radius`, { radius })
+        .andWhere(`${searchDistanceFormula} <= :radius`, { radius })
         .setParameter('lat', lat)
-        .setParameter('lng', lng)
-        .orderBy(searchDistanceFormula, 'ASC');
-    } else {
-      storeQuery.orderBy('store.rating', 'DESC');
+        .setParameter('lng', lng);
     }
-
-    storeQuery.take(limit);
+    storeQuery.orderBy('store.rating', 'DESC');
+    storeQuery.take(limit * 2);
 
     const { entities: stores, raw: storeRaw } = await storeQuery.getRawAndEntities();
 
-    const storeResults = stores.map((store, index) => ({
+    let storeResults = stores.map((store, index) => ({
       id: store.id,
       name: store.name,
       description: store.description,
@@ -470,13 +488,19 @@ export class DiscoveryService {
         name: c.name,
         slug: c.slug,
       })) || [],
-      distance: lat !== undefined && lng !== undefined && storeRaw[index]?.distance
+      distance: hasGeo && storeRaw[index]?.distance
         ? parseFloat(storeRaw[index].distance)
         : 0,
     }));
 
+    // Sort by distance if geo-filtering was applied, then slice
+    if (hasGeo) {
+      storeResults = storeResults.sort((a, b) => a.distance - b.distance);
+    }
+    storeResults = storeResults.slice(0, limit);
+
     return {
-      products: productResults,
+      products: sortedProducts,
       stores: storeResults,
     };
   }
