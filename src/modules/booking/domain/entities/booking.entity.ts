@@ -13,6 +13,7 @@ import { User } from '@modules/identity/domain/entities/user.entity';
 import { Product } from '@modules/catalog/domain/entities/product.entity';
 import { Store } from '@modules/store/domain/entities/store.entity';
 import { Payment } from './payment.entity';
+import { Review } from '@modules/review/domain/entities/review.entity';
 import { InvalidStateTransitionException } from '@common/exceptions';
 
 export enum BookingStatus {
@@ -114,6 +115,9 @@ export class Booking {
 
   @Column({ name: 'cancellation_reason', type: 'text', nullable: true })
   cancellationReason: string | null;
+
+  @OneToOne(() => Review, (review) => review.booking)
+  review: Review;
 
   // Domain methods
   confirm(): void {

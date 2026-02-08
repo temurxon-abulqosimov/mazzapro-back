@@ -22,6 +22,7 @@ import {
   InvalidPickupWindowException,
 } from '@common/exceptions';
 import { parseTimeToDate } from '@common/utils/date.util';
+import { RedisService } from '@common/redis/redis.service';
 
 @Injectable()
 export class CreateProductUseCase {
@@ -33,6 +34,7 @@ export class CreateProductUseCase {
     @Inject(STORE_REPOSITORY)
     private readonly storeRepository: IStoreRepository,
     private readonly eventEmitter: EventEmitter2,
+    private readonly redisService: RedisService,
   ) { }
 
   async execute(userId: string, dto: CreateProductDto): Promise<Product> {
@@ -114,6 +116,9 @@ export class CreateProductUseCase {
     }
 
     const savedProduct = await this.productRepository.save(product);
+
+    // Clear discovery cache so new products appear immediately
+    await this.redisService.delPattern('discovery:products:*');
 
     // Emit event for notifications
     this.eventEmitter.emit(

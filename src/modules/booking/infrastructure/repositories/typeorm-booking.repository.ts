@@ -11,7 +11,7 @@ export class TypeOrmBookingRepository implements IBookingRepository {
     @InjectRepository(Booking)
     private readonly repository: Repository<Booking>,
     private readonly redisService: RedisService,
-  ) {}
+  ) { }
 
   async findById(id: string): Promise<Booking | null> {
     return this.repository.findOne({
@@ -23,7 +23,7 @@ export class TypeOrmBookingRepository implements IBookingRepository {
   async findByIdWithRelations(id: string): Promise<Booking | null> {
     return this.repository.findOne({
       where: { id },
-      relations: ['payment', 'product', 'product.images', 'store', 'user'],
+      relations: ['payment', 'product', 'product.images', 'store', 'user', 'review'],
     });
   }
 
@@ -59,7 +59,7 @@ export class TypeOrmBookingRepository implements IBookingRepository {
 
     return this.repository.find({
       where,
-      relations: ['payment', 'product', 'product.images', 'store'],
+      relations: ['payment', 'product', 'product.images', 'store', 'review'],
       order: { createdAt: 'DESC' },
     });
   }

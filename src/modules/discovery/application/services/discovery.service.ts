@@ -19,7 +19,7 @@ import { IFavoriteRepository, FAVORITE_REPOSITORY } from '@modules/favorite/doma
 
 @Injectable()
 export class DiscoveryService {
-  private readonly CACHE_TTL = 30; // 30 seconds
+  private readonly CACHE_TTL = 10; // 10 seconds
 
   constructor(
     @InjectRepository(Product)
@@ -115,7 +115,9 @@ export class DiscoveryService {
       case SortOption.RECOMMENDED:
       default:
         // Recommended: combination of distance, rating, and freshness
-        query.orderBy('distance', 'ASC').addOrderBy('store.rating', 'DESC');
+        query.orderBy('distance', 'ASC')
+          .addOrderBy('store.rating', 'DESC')
+          .addOrderBy('product.created_at', 'DESC');
         break;
     }
 

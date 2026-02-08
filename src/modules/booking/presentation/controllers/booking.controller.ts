@@ -59,7 +59,7 @@ export class BookingController {
     private readonly getUserBookingsUseCase: GetUserBookingsUseCase,
     private readonly getBookingByIdUseCase: GetBookingByIdUseCase,
     private readonly cancelBookingUseCase: CancelBookingUseCase,
-  ) {}
+  ) { }
 
   @Post()
   @HttpCode(HttpStatus.CREATED)
@@ -127,6 +127,7 @@ export class BookingController {
           rating: Number(b.store?.rating || 0),
         },
         createdAt: b.createdAt,
+        isReviewed: !!b.review,
       })),
       summary: { activeCount },
     };
@@ -166,9 +167,9 @@ export class BookingController {
         status: booking.status,
         refund: booking.payment
           ? {
-              amount: booking.payment.refundedAmount,
-              status: booking.payment.status,
-            }
+            amount: booking.payment.refundedAmount,
+            status: booking.payment.status,
+          }
           : null,
       },
     };
@@ -214,6 +215,7 @@ export class BookingController {
       createdAt: booking.createdAt,
       confirmedAt: booking.confirmedAt,
       completedAt: booking.completedAt,
+      isReviewed: !!booking.review,
     };
   }
 }
@@ -228,7 +230,7 @@ export class SellerOrderController {
     private readonly completeBookingUseCase: CompleteBookingUseCase,
     @Inject(STORE_REPOSITORY)
     private readonly storeRepository: IStoreRepository,
-  ) {}
+  ) { }
 
   @Post(':id/complete')
   @HttpCode(HttpStatus.OK)

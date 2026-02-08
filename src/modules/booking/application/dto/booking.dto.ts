@@ -104,6 +104,9 @@ export class BookingResponseDto {
 
   @ApiPropertyOptional()
   completedAt?: Date;
+
+  @ApiProperty()
+  isReviewed: boolean;
 }
 
 export class BookingListItemDto {
@@ -150,4 +153,7 @@ export class BookingListItemDto {
 
   @ApiProperty()
   createdAt: Date;
+
+  @ApiProperty()
+  isReviewed: boolean;
 }
