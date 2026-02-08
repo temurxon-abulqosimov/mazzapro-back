@@ -56,7 +56,7 @@ export class User {
   @Column({ name: 'email_verified', default: false })
   emailVerified: boolean;
 
-  @Column({ name: 'google_id', nullable: true, unique: true })
+  @Column({ name: 'google_id', type: 'varchar', nullable: true, unique: true })
   @Index()
   googleId: string | null;
 
