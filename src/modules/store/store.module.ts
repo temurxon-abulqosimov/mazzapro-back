@@ -28,6 +28,7 @@ import {
   FollowStoreUseCase,
   UnfollowStoreUseCase,
   GetFollowedStoresUseCase,
+  GetStoreProductsUseCase,
 } from './application/use-cases';
 import {
   GetDashboardStatsUseCase,
@@ -48,7 +49,7 @@ import { BookingModule } from '@modules/booking/booking.module';
 
 @Module({
   imports: [
-    TypeOrmModule.forFeature([Category, Seller, Store, Follow]),
+    TypeOrmModule.forFeature([Category, Seller, Store, Follow, Product]),
     forwardRef(() => IdentityModule),
     forwardRef(() => CatalogModule),
     forwardRef(() => BookingModule),

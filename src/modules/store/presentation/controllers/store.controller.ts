@@ -1,3 +1,4 @@
+```typescript
 import { Controller, Get, Post, Delete, Param, ParseUUIDPipe, UseGuards, HttpCode, HttpStatus, Req } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth } from '@nestjs/swagger';
 import { Public } from '@common/decorators/public.decorator';
@@ -5,7 +6,8 @@ import { StoreDetailResponseDto } from '../../application/dto';
 import {
   GetStoreByIdUseCase,
   FollowStoreUseCase,
-  UnfollowStoreUseCase
+  UnfollowStoreUseCase,
+  GetStoreProductsUseCase
 } from '../../application/use-cases';
 import { JwtAuthGuard } from '@common/guards/jwt-auth.guard';
 import { OptionalJwtAuthGuard } from '@common/guards/optional-jwt-auth.guard';
@@ -18,6 +20,7 @@ export class StoreController {
     private readonly getStoreByIdUseCase: GetStoreByIdUseCase,
     private readonly followStoreUseCase: FollowStoreUseCase,
     private readonly unfollowStoreUseCase: UnfollowStoreUseCase,
+    private readonly getStoreProductsUseCase: GetStoreProductsUseCase,
   ) { }
 
   @Get(':id')
