@@ -13,9 +13,59 @@ import {
   DiscoveryProductResponseDto,
 } from '../dto/discovery.dto';
 import { formatTimeRange } from '@common/utils/date.util';
-import { decodeCursor, encodeCursor, createPaginatedResult } from '@common/utils/pagination.util';
+import { decodeCursor, createPaginatedResult } from '@common/utils/pagination.util';
 import { PaginatedResult } from '@common/types';
 import { IFavoriteRepository, FAVORITE_REPOSITORY } from '@modules/favorite/domain/repositories';
+
+// Haversine distance formula for PostgreSQL
+const HAVERSINE_SQL = (latParam: string, lngParam: string, latCol: string, lngCol: string) => `
+  (6371 * acos(
+    LEAST(1.0, GREATEST(-1.0,
+      cos(radians(:${latParam})) * cos(radians(${latCol})) *
+      cos(radians(${lngCol}) - radians(:${lngParam})) +
+      sin(radians(:${latParam})) * sin(radians(${latCol}))
+    ))
+  ))
+`;
+
+interface RawProductResult {
+  product_id: string;
+  product_name: string;
+  product_description: string | null;
+  product_original_price: number;
+  product_discounted_price: number;
+  product_quantity: number;
+  product_quantity_available: number;
+  product_pickup_window_start: Date;
+  product_pickup_window_end: Date;
+  product_status: string;
+  store_id: string;
+  store_name: string;
+  store_rating: string;
+  store_image_url: string | null;
+  store_address: string;
+  store_lat: string;
+  store_lng: string;
+  category_id: string;
+  category_name: string;
+  category_slug: string;
+  category_icon: string | null;
+  distance: string;
+}
+
+interface RawStoreResult {
+  store_id: string;
+  store_name: string;
+  store_description: string | null;
+  store_rating: string;
+  store_review_count: number;
+  store_image_url: string | null;
+  store_address: string;
+  store_city: string;
+  store_lat: string;
+  store_lng: string;
+  distance: string;
+}
 
 @Injectable()
 export class DiscoveryService {
@@ -42,11 +92,6 @@ export class DiscoveryService {
 
     this.logger.log(`Discovery request: lat=${lat}, lng=${lng}, radius=${radius}, category=${category}`);
 
-    // Debug: Count all products and active products
-    const totalProducts = await this.productRepository.count();
-    const activeProducts = await this.productRepository.count({ where: { status: ProductStatus.ACTIVE } });
-    this.logger.log(`Total products in DB: ${totalProducts}, Active products: ${activeProducts}`);
-
     // Build cache key
     const cacheKey = `discovery:products:${lat.toFixed(3)}:${lng.toFixed(3)}:${radius}:${category || ''}:${sort}`;
 
@@ -54,12 +99,9 @@ export class DiscoveryService {
     if (!cursor) {
       const cached = await this.redisService.get<DiscoveryProductResponseDto[]>(cacheKey);
       if (cached) {
-        // If user is logged in, we need to populate isFavorited from DB as cache doesn't have it specific to user
         if (userId) {
-          const productIds = cached.map(p => p.id);
           const favoriteProductIds = await this.favoriteRepository.getProductIdsByUserId(userId);
           const favoriteSet = new Set(favoriteProductIds);
-
           return createPaginatedResult(
             cached.map(p => ({ ...p, isFavorited: favoriteSet.has(p.id) })),
             limit
@@ -80,15 +122,37 @@ export class DiscoveryService {
       categoryIds = cats.map(c => c.id);
     }
 
-    // Build query with Haversine formula for distance
-    const distanceFormula = `(6371 * acos(cos(radians(:lat)) * cos(radians(store.lat)) * cos(radians(store.lng) - radians(:lng)) + sin(radians(:lat)) * sin(radians(store.lat))))`;
+    // Build query with SQL distance calculation
+    const distanceFormula = HAVERSINE_SQL('lat', 'lng', 'store.lat', 'store.lng');
 
     const query = this.productRepository
       .createQueryBuilder('product')
-      .leftJoinAndSelect('product.store', 'store')
-      .leftJoinAndSelect('product.category', 'category')
-      .leftJoinAndSelect('product.images', 'images')
-      .addSelect(distanceFormula, 'distance')
+      .innerJoin('product.store', 'store')
+      .innerJoin('product.category', 'category')
+      .select([
+        'product.id AS product_id',
+        'product.name AS product_name',
+        'product.description AS product_description',
+        'product.original_price AS product_original_price',
+        'product.discounted_price AS product_discounted_price',
+        'product.quantity AS product_quantity',
+        'product.quantity_available AS product_quantity_available',
+        'product.pickup_window_start AS product_pickup_window_start',
+        'product.pickup_window_end AS product_pickup_window_end',
+        'product.status AS product_status',
+        'store.id AS store_id',
+        'store.name AS store_name',
+        'store.rating AS store_rating',
+        'store.image_url AS store_image_url',
+        'store.address AS store_address',
+        'store.lat AS store_lat',
+        'store.lng AS store_lng',
+        'category.id AS category_id',
+        'category.name AS category_name',
+        'category.slug AS category_slug',
+        'category.icon AS category_icon',
+        `${distanceFormula} AS distance`,
+      ])
       .where('product.status = :status', { status: ProductStatus.ACTIVE })
       .andWhere('store.is_active = :isActive', { isActive: true })
       .andWhere('product.expires_at > :now', { now: new Date() })
@@ -109,18 +173,16 @@ export class DiscoveryService {
       query.andWhere('product.discounted_price <= :maxPrice', { maxPrice });
     }
 
-    // Basic ordering for non-distance sorts (distance sorted in JS due to TypeORM limitation)
-    switch (sort) {
-      case SortOption.PRICE_ASC:
-        query.orderBy('product.discounted_price', 'ASC');
-        break;
-      case SortOption.PRICE_DESC:
-        query.orderBy('product.discounted_price', 'DESC');
-        break;
-      default:
-        // Default order by created_at, will re-sort by distance in JS
-        query.orderBy('product.created_at', 'DESC');
-        break;
+    // Sorting
+    if (sort === SortOption.PRICE_ASC) {
+      query.orderBy('product.discounted_price', 'ASC');
+    } else if (sort === SortOption.PRICE_DESC) {
+      query.orderBy('product.discounted_price', 'DESC');
+    } else if (sort === SortOption.DISTANCE) {
+      query.orderBy('distance', 'ASC');
+    } else {
+      // RECOMMENDED: distance first, then rating
+      query.orderBy('distance', 'ASC').addOrderBy('store.rating', 'DESC');
     }
 
     // Cursor pagination
@@ -131,20 +193,31 @@ export class DiscoveryService {
       }
     }
 
-    // Fetch more than needed for distance-based sorting
-    query.take(limit * 2);
+    query.limit(limit + 1);
 
-    const { entities: products, raw } = await query.getRawAndEntities();
+    const rawProducts: RawProductResult[] = await query.getRawMany();
 
-    this.logger.log(`Discovery query returned ${products.length} products`);
-    if (products.length === 0) {
-      // Debug: Check why no products returned
-      const expiredCount = await this.productRepository
-        .createQueryBuilder('p')
-        .where('p.status = :status', { status: ProductStatus.ACTIVE })
-        .andWhere('p.expires_at <= :now', { now: new Date() })
-        .getCount();
-      this.logger.log(`Active but expired products: ${expiredCount}`);
+    this.logger.log(`Discovery query returned ${rawProducts.length} products`);
+
+    // Get images for products (separate query to avoid complex joins)
+    const productIds = rawProducts.map(p => p.product_id);
+    let imagesMap = new Map<string, { url: string; position: number }[]>();
+
+    if (productIds.length > 0) {
+      const images = await this.productRepository
+        .createQueryBuilder('product')
+        .innerJoin('product.images', 'image')
+        .select(['product.id AS product_id', 'image.url AS url', 'image.position AS position'])
+        .where('product.id IN (:...productIds)', { productIds })
+        .orderBy('image.position', 'ASC')
+        .getRawMany();
+
+      for (const img of images) {
+        if (!imagesMap.has(img.product_id)) {
+          imagesMap.set(img.product_id, []);
+        }
+        imagesMap.get(img.product_id)!.push({ url: img.url, position: img.position });
+      }
     }
 
     // Get favorites if user logged in
@@ -154,58 +227,52 @@ export class DiscoveryService {
       favoriteSet = new Set(favoriteProductIds);
     }
 
-    // Map to response DTOs with distance
-    let results: DiscoveryProductResponseDto[] = products.map((product, index) => ({
-      id: product.id,
-      name: product.name,
-      description: product.description,
-      originalPrice: product.originalPrice,
-      discountedPrice: product.discountedPrice,
-      discountPercent: product.discountPercent,
-      quantity: product.quantity,
-      quantityAvailable: product.quantityAvailable,
-      pickupWindow: {
-        start: product.pickupWindowStart,
-        end: product.pickupWindowEnd,
-        label: formatTimeRange(product.pickupWindowStart, product.pickupWindowEnd),
-      },
-      status: product.status,
-      images: product.images?.map(img => ({ url: img.url, position: img.position })) || [],
-      store: {
-        id: product.store.id,
-        name: product.store.name,
-        rating: Number(product.store.rating),
-        imageUrl: product.store.imageUrl,
-        location: {
-          address: product.store.address,
-          lat: Number(product.store.lat),
-          lng: Number(product.store.lng),
+    // Map raw results to DTOs
+    const results: DiscoveryProductResponseDto[] = rawProducts.map((raw) => {
+      const originalPrice = Number(raw.product_original_price);
+      const discountedPrice = Number(raw.product_discounted_price);
+      const discountPercent = Math.round(((originalPrice - discountedPrice) / originalPrice) * 100);
+
+      return {
+        id: raw.product_id,
+        name: raw.product_name,
+        description: raw.product_description,
+        originalPrice,
+        discountedPrice,
+        discountPercent,
+        quantity: Number(raw.product_quantity),
+        quantityAvailable: Number(raw.product_quantity_available),
+        pickupWindow: {
+          start: new Date(raw.product_pickup_window_start),
+          end: new Date(raw.product_pickup_window_end),
+          label: formatTimeRange(
+            new Date(raw.product_pickup_window_start),
+            new Date(raw.product_pickup_window_end)
+          ),
         },
-      },
-      category: {
-        id: product.category.id,
-        name: product.category.name,
-        slug: product.category.slug,
-        icon: product.category.icon,
-      },
-      distance: raw[index]?.distance ? parseFloat(raw[index].distance) : 0,
-      isFavorited: favoriteSet.has(product.id),
-    }));
-
-    // Sort by distance for DISTANCE and RECOMMENDED sorts
-    if (sort === SortOption.DISTANCE || sort === SortOption.RECOMMENDED || !sort) {
-      results.sort((a, b) => {
-        // Primary: distance
-        const distDiff = a.distance - b.distance;
-        if (sort === SortOption.DISTANCE) return distDiff;
-        // For recommended: distance, then rating, then recency (already sorted by created_at)
-        if (distDiff !== 0) return distDiff;
-        return b.store.rating - a.store.rating;
-      });
-    }
-
-    // Slice to limit after sorting
-    results = results.slice(0, limit + 1);
+        status: raw.product_status,
+        images: imagesMap.get(raw.product_id) || [],
+        store: {
+          id: raw.store_id,
+          name: raw.store_name,
+          rating: Number(raw.store_rating),
+          imageUrl: raw.store_image_url,
+          location: {
+            address: raw.store_address,
+            lat: Number(raw.store_lat),
+            lng: Number(raw.store_lng),
+          },
+        },
+        category: {
+          id: raw.category_id,
+          name: raw.category_name,
+          slug: raw.category_slug,
+          icon: raw.category_icon,
+        },
+        distance: Number(raw.distance),
+        isFavorited: favoriteSet.has(raw.product_id),
+      };
+    });
 
     // Cache first page results
     if (!cursor && results.length > 0) {
@@ -221,21 +288,28 @@ export class DiscoveryService {
   ): Promise<PaginatedResult<any>> {
     const { lat, lng, radius = 5, category, hasAvailability, cursor, limit = 20 } = dto;
 
-    const storeDistanceFormula = `(6371 * acos(cos(radians(:lat)) * cos(radians(store.lat)) * cos(radians(store.lng) - radians(:lng)) + sin(radians(:lat)) * sin(radians(store.lat))))`;
+    const distanceFormula = HAVERSINE_SQL('lat', 'lng', 'store.lat', 'store.lng');
 
     const query = this.storeRepository
       .createQueryBuilder('store')
-      .leftJoinAndSelect('store.categories', 'category')
-      .addSelect(storeDistanceFormula, 'distance')
+      .select([
+        'store.id AS store_id',
+        'store.name AS store_name',
+        'store.description AS store_description',
+        'store.rating AS store_rating',
+        'store.review_count AS store_review_count',
+        'store.image_url AS store_image_url',
+        'store.address AS store_address',
+        'store.city AS store_city',
+        'store.lat AS store_lat',
+        'store.lng AS store_lng',
+        `${distanceFormula} AS distance`,
+      ])
       .where('store.is_active = :isActive', { isActive: true })
-      .andWhere(`${storeDistanceFormula} <= :radius`, { radius })
+      .andWhere(`${distanceFormula} <= :radius`, { radius })
       .setParameter('lat', lat)
       .setParameter('lng', lng)
-      .orderBy('store.rating', 'DESC'); // Sort by distance in JS
-
-    if (category) {
-      query.andWhere('category.slug = :category', { category });
-    }
+      .orderBy('distance', 'ASC');
 
     if (cursor) {
       const decoded = decodeCursor(cursor);
@@ -244,52 +318,91 @@ export class DiscoveryService {
       }
     }
 
-    query.take(limit * 2);
+    query.limit(100);
 
-    const { entities: stores, raw } = await query.getRawAndEntities();
+    const rawStores: RawStoreResult[] = await query.getRawMany();
+
+    // Get categories for stores
+    const storeIds = rawStores.map(s => s.store_id);
+    let categoriesMap = new Map<string, { id: string; name: string; slug: string }[]>();
+
+    if (storeIds.length > 0) {
+      const storeCategories = await this.storeRepository
+        .createQueryBuilder('store')
+        .innerJoin('store.categories', 'category')
+        .select([
+          'store.id AS store_id',
+          'category.id AS category_id',
+          'category.name AS category_name',
+          'category.slug AS category_slug',
+        ])
+        .where('store.id IN (:...storeIds)', { storeIds })
+        .getRawMany();
+
+      for (const sc of storeCategories) {
+        if (!categoriesMap.has(sc.store_id)) {
+          categoriesMap.set(sc.store_id, []);
+        }
+        categoriesMap.get(sc.store_id)!.push({
+          id: sc.category_id,
+          name: sc.category_name,
+          slug: sc.category_slug,
+        });
+      }
+
+      // Filter by category if specified
+      if (category) {
+        const filteredStoreIds = new Set<string>();
+        for (const [storeId, cats] of categoriesMap) {
+          if (cats.some(c => c.slug === category)) {
+            filteredStoreIds.add(storeId);
+          }
+        }
+        // Filter rawStores
+        const filteredRawStores = rawStores.filter(s => filteredStoreIds.has(s.store_id));
+        rawStores.length = 0;
+        rawStores.push(...filteredRawStores);
+      }
+    }
 
     // Count available products per store
-    const storeIds = stores.map(s => s.id);
-    const productCounts = await this.productRepository
-      .createQueryBuilder('product')
-      .select('product.store_id', 'storeId')
-      .addSelect('COUNT(*)', 'count')
-      .where('product.store_id IN (:...storeIds)', { storeIds })
-      .andWhere('product.status = :status', { status: ProductStatus.ACTIVE })
-      .groupBy('product.store_id')
-      .getRawMany();
+    let productCounts: { storeId: string; count: string }[] = [];
+    if (storeIds.length > 0) {
+      productCounts = await this.productRepository
+        .createQueryBuilder('product')
+        .select('product.store_id', 'storeId')
+        .addSelect('COUNT(*)', 'count')
+        .where('product.store_id IN (:...storeIds)', { storeIds })
+        .andWhere('product.status = :status', { status: ProductStatus.ACTIVE })
+        .andWhere('product.expires_at > :now', { now: new Date() })
+        .groupBy('product.store_id')
+        .getRawMany();
+    }
 
     const countMap = new Map(productCounts.map(pc => [pc.storeId, parseInt(pc.count)]));
 
-    let results = stores.map((store, index) => ({
-      id: store.id,
-      name: store.name,
-      description: store.description,
-      rating: Number(store.rating),
-      reviewCount: store.reviewCount,
-      imageUrl: store.imageUrl,
+    let results = rawStores.map((raw) => ({
+      id: raw.store_id,
+      name: raw.store_name,
+      description: raw.store_description,
+      rating: Number(raw.store_rating),
+      reviewCount: Number(raw.store_review_count),
+      imageUrl: raw.store_image_url,
       location: {
-        address: store.address,
-        city: store.city,
-        lat: Number(store.lat),
-        lng: Number(store.lng),
+        address: raw.store_address,
+        city: raw.store_city,
+        lat: Number(raw.store_lat),
+        lng: Number(raw.store_lng),
       },
-      categories: store.categories?.map(c => ({
-        id: c.id,
-        name: c.name,
-        slug: c.slug,
-      })) || [],
-      distance: raw[index]?.distance ? parseFloat(raw[index].distance) : 0,
-      availableProducts: countMap.get(store.id) || 0,
+      categories: categoriesMap.get(raw.store_id) || [],
+      distance: Number(raw.distance),
+      availableProducts: countMap.get(raw.store_id) || 0,
     }));
 
     // Filter by availability if requested
     if (hasAvailability) {
       results = results.filter(r => r.availableProducts > 0);
     }
-
-    // Sort by distance
-    results.sort((a, b) => a.distance - b.distance);
 
     // Slice to limit
     results = results.slice(0, limit + 1);
@@ -304,18 +417,17 @@ export class DiscoveryService {
     const products = await this.productRepository
       .createQueryBuilder('product')
       .leftJoinAndSelect('product.store', 'store')
+      .leftJoinAndSelect('product.images', 'images')
       .where('product.status = :status', { status: ProductStatus.ACTIVE })
       .andWhere('store.is_active = :isActive', { isActive: true })
       .andWhere('store.lat BETWEEN :swLat AND :neLat', { swLat, neLat })
       .andWhere('store.lng BETWEEN :swLng AND :neLng', { swLng, neLng })
-      .take(100) // Limit for performance
+      .take(100)
       .getMany();
 
     // For low zoom levels, cluster markers
-    // For high zoom levels, return individual markers
     if (dto.zoom < 14) {
-      // Simple grid-based clustering
-      const gridSize = 0.01 * (15 - dto.zoom); // Adjust grid based on zoom
+      const gridSize = 0.01 * (15 - dto.zoom);
       const clusters = new Map<string, { lat: number; lng: number; count: number; products: any[] }>();
 
       for (const product of products) {
@@ -331,7 +443,6 @@ export class DiscoveryService {
         const cluster = clusters.get(gridKey)!;
         cluster.count++;
         cluster.products.push(product);
-        // Update center to average
         cluster.lat = (cluster.lat * (cluster.count - 1) + Number(product.store.lat)) / cluster.count;
         cluster.lng = (cluster.lng * (cluster.count - 1) + Number(product.store.lng)) / cluster.count;
       }
@@ -358,7 +469,6 @@ export class DiscoveryService {
       });
     }
 
-    // Return individual markers at high zoom
     return products.map(p => ({
       type: 'product',
       id: p.id,
@@ -373,134 +483,232 @@ export class DiscoveryService {
   async search(dto: SearchDto): Promise<{ products: DiscoveryProductResponseDto[]; stores: any[] }> {
     const { q, lat, lng, radius = 10, limit = 20 } = dto;
     const searchTerm = `%${q.toLowerCase()}%`;
+    const hasGeo = lat !== undefined && lng !== undefined;
 
     // Search products
-    const productQuery = this.productRepository
+    let productQuery = this.productRepository
       .createQueryBuilder('product')
-      .leftJoinAndSelect('product.store', 'store')
-      .leftJoinAndSelect('product.category', 'category')
-      .leftJoinAndSelect('product.images', 'images')
-      .where('product.status = :status', { status: ProductStatus.ACTIVE })
-      .andWhere('store.is_active = :isActive', { isActive: true })
-      .andWhere('product.expires_at > :now', { now: new Date() })
-      .andWhere(
-        '(LOWER(product.name) LIKE :searchTerm OR LOWER(product.description) LIKE :searchTerm OR LOWER(store.name) LIKE :searchTerm)',
-        { searchTerm },
-      );
+      .innerJoin('product.store', 'store')
+      .innerJoin('product.category', 'category');
 
-    // Add geo-filtering if lat/lng provided
-    const searchDistanceFormula = `(6371 * acos(cos(radians(:lat)) * cos(radians(store.lat)) * cos(radians(store.lng) - radians(:lng)) + sin(radians(:lat)) * sin(radians(store.lat))))`;
-    const hasGeo = lat !== undefined && lng !== undefined;
+    const selectFields = [
+      'product.id AS product_id',
+      'product.name AS product_name',
+      'product.description AS product_description',
+      'product.original_price AS product_original_price',
+      'product.discounted_price AS product_discounted_price',
+      'product.quantity AS product_quantity',
+      'product.quantity_available AS product_quantity_available',
+      'product.pickup_window_start AS product_pickup_window_start',
+      'product.pickup_window_end AS product_pickup_window_end',
+      'product.status AS product_status',
+      'store.id AS store_id',
+      'store.name AS store_name',
+      'store.rating AS store_rating',
+      'store.image_url AS store_image_url',
+      'store.address AS store_address',
+      'store.lat AS store_lat',
+      'store.lng AS store_lng',
+      'category.id AS category_id',
+      'category.name AS category_name',
+      'category.slug AS category_slug',
+      'category.icon AS category_icon',
+    ];
+
     if (hasGeo) {
-      productQuery
-        .addSelect(searchDistanceFormula, 'distance')
-        .andWhere(`${searchDistanceFormula} <= :radius`, { radius })
+      const distanceFormula = HAVERSINE_SQL('lat', 'lng', 'store.lat', 'store.lng');
+      selectFields.push(`${distanceFormula} AS distance`);
+      productQuery = productQuery
+        .select(selectFields)
         .setParameter('lat', lat)
-        .setParameter('lng', lng);
+        .setParameter('lng', lng)
+        .where('product.status = :status', { status: ProductStatus.ACTIVE })
+        .andWhere('store.is_active = :isActive', { isActive: true })
+        .andWhere('product.expires_at > :now', { now: new Date() })
+        .andWhere(
+          '(LOWER(product.name) LIKE :searchTerm OR LOWER(product.description) LIKE :searchTerm OR LOWER(store.name) LIKE :searchTerm)',
+          { searchTerm },
+        )
+        .andWhere(`${distanceFormula} <= :radius`, { radius })
+        .orderBy('distance', 'ASC');
+    } else {
+      selectFields.push('0 AS distance');
+      productQuery = productQuery
+        .select(selectFields)
+        .where('product.status = :status', { status: ProductStatus.ACTIVE })
+        .andWhere('store.is_active = :isActive', { isActive: true })
+        .andWhere('product.expires_at > :now', { now: new Date() })
+        .andWhere(
+          '(LOWER(product.name) LIKE :searchTerm OR LOWER(product.description) LIKE :searchTerm OR LOWER(store.name) LIKE :searchTerm)',
+          { searchTerm },
+        )
+        .orderBy('product.created_at', 'DESC');
     }
-    productQuery.orderBy('product.created_at', 'DESC');
-    productQuery.take(limit * 2);
 
-    const { entities: products, raw: productRaw } = await productQuery.getRawAndEntities();
+    productQuery.limit(limit);
 
-    const productResults: DiscoveryProductResponseDto[] = products.map((product, index) => ({
-      id: product.id,
-      name: product.name,
-      description: product.description,
-      originalPrice: product.originalPrice,
-      discountedPrice: product.discountedPrice,
-      discountPercent: product.discountPercent,
-      quantity: product.quantity,
-      quantityAvailable: product.quantityAvailable,
-      pickupWindow: {
-        start: product.pickupWindowStart,
-        end: product.pickupWindowEnd,
-        label: formatTimeRange(product.pickupWindowStart, product.pickupWindowEnd),
-      },
-      status: product.status,
-      images: product.images?.map(img => ({ url: img.url, position: img.position })) || [],
-      store: {
-        id: product.store.id,
-        name: product.store.name,
-        rating: Number(product.store.rating),
-        imageUrl: product.store.imageUrl,
-        location: {
-          address: product.store.address,
-          lat: Number(product.store.lat),
-          lng: Number(product.store.lng),
+    const rawProducts: RawProductResult[] = await productQuery.getRawMany();
+
+    // Get images for products
+    const productIds = rawProducts.map(p => p.product_id);
+    let imagesMap = new Map<string, { url: string; position: number }[]>();
+
+    if (productIds.length > 0) {
+      const images = await this.productRepository
+        .createQueryBuilder('product')
+        .innerJoin('product.images', 'image')
+        .select(['product.id AS product_id', 'image.url AS url', 'image.position AS position'])
+        .where('product.id IN (:...productIds)', { productIds })
+        .orderBy('image.position', 'ASC')
+        .getRawMany();
+
+      for (const img of images) {
+        if (!imagesMap.has(img.product_id)) {
+          imagesMap.set(img.product_id, []);
+        }
+        imagesMap.get(img.product_id)!.push({ url: img.url, position: img.position });
+      }
+    }
+
+    const productResults: DiscoveryProductResponseDto[] = rawProducts.map((raw) => {
+      const originalPrice = Number(raw.product_original_price);
+      const discountedPrice = Number(raw.product_discounted_price);
+      const discountPercent = Math.round(((originalPrice - discountedPrice) / originalPrice) * 100);
+
+      return {
+        id: raw.product_id,
+        name: raw.product_name,
+        description: raw.product_description,
+        originalPrice,
+        discountedPrice,
+        discountPercent,
+        quantity: Number(raw.product_quantity),
+        quantityAvailable: Number(raw.product_quantity_available),
+        pickupWindow: {
+          start: new Date(raw.product_pickup_window_start),
+          end: new Date(raw.product_pickup_window_end),
+          label: formatTimeRange(
+            new Date(raw.product_pickup_window_start),
+            new Date(raw.product_pickup_window_end)
+          ),
         },
-      },
-      category: {
-        id: product.category.id,
-        name: product.category.name,
-        slug: product.category.slug,
-        icon: product.category.icon,
-      },
-      distance: lat !== undefined && lng !== undefined && productRaw[index]?.distance
-        ? parseFloat(productRaw[index].distance)
-        : 0,
-    }));
-
-    // Sort by distance if geo-filtering was applied, then slice
-    let sortedProducts = productResults;
-    if (hasGeo) {
-      sortedProducts = [...productResults].sort((a, b) => a.distance - b.distance);
-    }
-    sortedProducts = sortedProducts.slice(0, limit);
+        status: raw.product_status,
+        images: imagesMap.get(raw.product_id) || [],
+        store: {
+          id: raw.store_id,
+          name: raw.store_name,
+          rating: Number(raw.store_rating),
+          imageUrl: raw.store_image_url,
+          location: {
+            address: raw.store_address,
+            lat: Number(raw.store_lat),
+            lng: Number(raw.store_lng),
+          },
+        },
+        category: {
+          id: raw.category_id,
+          name: raw.category_name,
+          slug: raw.category_slug,
+          icon: raw.category_icon,
+        },
+        distance: Number(raw.distance),
+      };
+    });
 
     // Search stores
-    const storeQuery = this.storeRepository
-      .createQueryBuilder('store')
-      .leftJoinAndSelect('store.categories', 'category')
-      .where('store.is_active = :isActive', { isActive: true })
-      .andWhere(
-        '(LOWER(store.name) LIKE :searchTerm OR LOWER(store.description) LIKE :searchTerm)',
-        { searchTerm },
-      );
+    let storeQuery = this.storeRepository.createQueryBuilder('store');
+
+    const storeSelectFields = [
+      'store.id AS store_id',
+      'store.name AS store_name',
+      'store.description AS store_description',
+      'store.rating AS store_rating',
+      'store.review_count AS store_review_count',
+      'store.image_url AS store_image_url',
+      'store.address AS store_address',
+      'store.city AS store_city',
+      'store.lat AS store_lat',
+      'store.lng AS store_lng',
+    ];
 
     if (hasGeo) {
-      storeQuery
-        .addSelect(searchDistanceFormula, 'distance')
-        .andWhere(`${searchDistanceFormula} <= :radius`, { radius })
+      const distanceFormula = HAVERSINE_SQL('lat', 'lng', 'store.lat', 'store.lng');
+      storeSelectFields.push(`${distanceFormula} AS distance`);
+      storeQuery = storeQuery
+        .select(storeSelectFields)
         .setParameter('lat', lat)
-        .setParameter('lng', lng);
+        .setParameter('lng', lng)
+        .where('store.is_active = :isActive', { isActive: true })
+        .andWhere(
+          '(LOWER(store.name) LIKE :searchTerm OR LOWER(store.description) LIKE :searchTerm)',
+          { searchTerm },
+        )
+        .andWhere(`${distanceFormula} <= :radius`, { radius })
+        .orderBy('distance', 'ASC');
+    } else {
+      storeSelectFields.push('0 AS distance');
+      storeQuery = storeQuery
+        .select(storeSelectFields)
+        .where('store.is_active = :isActive', { isActive: true })
+        .andWhere(
+          '(LOWER(store.name) LIKE :searchTerm OR LOWER(store.description) LIKE :searchTerm)',
+          { searchTerm },
+        )
+        .orderBy('store.rating', 'DESC');
     }
-    storeQuery.orderBy('store.rating', 'DESC');
-    storeQuery.take(limit * 2);
 
-    const { entities: stores, raw: storeRaw } = await storeQuery.getRawAndEntities();
+    storeQuery.limit(limit);
 
-    let storeResults = stores.map((store, index) => ({
-      id: store.id,
-      name: store.name,
-      description: store.description,
-      rating: Number(store.rating),
-      reviewCount: store.reviewCount,
-      imageUrl: store.imageUrl,
+    const rawStores: RawStoreResult[] = await storeQuery.getRawMany();
+
+    // Get categories for stores
+    const storeIds = rawStores.map(s => s.store_id);
+    let categoriesMap = new Map<string, { id: string; name: string; slug: string }[]>();
+
+    if (storeIds.length > 0) {
+      const storeCategories = await this.storeRepository
+        .createQueryBuilder('store')
+        .innerJoin('store.categories', 'category')
+        .select([
+          'store.id AS store_id',
+          'category.id AS category_id',
+          'category.name AS category_name',
+          'category.slug AS category_slug',
+        ])
+        .where('store.id IN (:...storeIds)', { storeIds })
+        .getRawMany();
+
+      for (const sc of storeCategories) {
+        if (!categoriesMap.has(sc.store_id)) {
+          categoriesMap.set(sc.store_id, []);
+        }
+        categoriesMap.get(sc.store_id)!.push({
+          id: sc.category_id,
+          name: sc.category_name,
+          slug: sc.category_slug,
+        });
+      }
+    }
+
+    const storeResults = rawStores.map((raw) => ({
+      id: raw.store_id,
+      name: raw.store_name,
+      description: raw.store_description,
+      rating: Number(raw.store_rating),
+      reviewCount: Number(raw.store_review_count),
+      imageUrl: raw.store_image_url,
       location: {
-        address: store.address,
-        city: store.city,
-        lat: Number(store.lat),
-        lng: Number(store.lng),
+        address: raw.store_address,
+        city: raw.store_city,
+        lat: Number(raw.store_lat),
+        lng: Number(raw.store_lng),
       },
-      categories: store.categories?.map(c => ({
-        id: c.id,
-        name: c.name,
-        slug: c.slug,
-      })) || [],
-      distance: hasGeo && storeRaw[index]?.distance
-        ? parseFloat(storeRaw[index].distance)
-        : 0,
+      categories: categoriesMap.get(raw.store_id) || [],
+      distance: Number(raw.distance),
     }));
 
-    // Sort by distance if geo-filtering was applied, then slice
-    if (hasGeo) {
-      storeResults = storeResults.sort((a, b) => a.distance - b.distance);
-    }
-    storeResults = storeResults.slice(0, limit);
-
     return {
-      products: sortedProducts,
+      products: productResults,
       stores: storeResults,
     };
   }
