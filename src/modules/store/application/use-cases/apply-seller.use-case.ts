@@ -10,6 +10,10 @@ import {
   STORE_REPOSITORY,
 } from '../../domain/repositories/store.repository.interface';
 import {
+  ICategoryRepository,
+  CATEGORY_REPOSITORY,
+} from '../../domain/repositories/category.repository.interface';
+import {
   IUserRepository,
   USER_REPOSITORY,
 } from '@modules/identity/domain/repositories/user.repository.interface';
@@ -25,7 +29,9 @@ export class ApplySellerUseCase {
     private readonly storeRepository: IStoreRepository,
     @Inject(USER_REPOSITORY)
     private readonly userRepository: IUserRepository,
-  ) {}
+    @Inject(CATEGORY_REPOSITORY)
+    private readonly categoryRepository: ICategoryRepository,
+  ) { }
 
   async execute(userId: string, dto: ApplySellerDto): Promise<Seller> {
     // Check if user exists
@@ -51,6 +57,12 @@ export class ApplySellerUseCase {
       }
     }
 
+    // Validate category
+    const category = await this.categoryRepository.findById(dto.categoryId);
+    if (!category) {
+      throw new EntityNotFoundException('Category', dto.categoryId);
+    }
+
     // Create seller application
     const seller = new Seller();
     seller.userId = userId;
@@ -72,6 +84,7 @@ export class ApplySellerUseCase {
     store.lat = dto.lat;
     store.lng = dto.lng;
     store.isActive = false; // Not active until approved
+    store.categories = [category];
 
     await this.storeRepository.save(store);
 

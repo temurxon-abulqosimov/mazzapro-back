@@ -7,6 +7,8 @@ import {
   Min,
   Max,
   IsPhoneNumber,
+  IsUUID,
+  IsNotEmpty,
 } from 'class-validator';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import { SellerStatus } from '../../domain/entities/seller.entity';
@@ -52,6 +54,11 @@ export class ApplySellerDto {
   @IsString()
   @MaxLength(1000)
   description?: string;
+
+  @ApiProperty({ example: '123e4567-e89b-12d3-a456-426614174000' })
+  @IsUUID()
+  @IsNotEmpty()
+  categoryId: string;
 }
 
 export class SellerApplicationResponseDto {
