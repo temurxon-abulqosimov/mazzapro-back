@@ -15,41 +15,41 @@ export class AdminSeedController {
   async seedMockData(): Promise<{ message: string; summary: string }> {
     const marketId = '550e8400-e29b-41d4-a716-446655440000'; // NYC market
 
-    // 1. Create Categories
+    // 1. Create Categories with proper public image URLs
     const categories = [
       {
         id: '11111111-1111-1111-1111-111111111111',
         name: 'Bakery',
         slug: 'bakery',
-        icon: 'http://localhost:3000/categories/bakery.jpg',
+        icon: 'https://images.unsplash.com/photo-1509440159596-0249088772ff?auto=format&fit=crop&w=800&q=80',
         displayOrder: 1,
       },
       {
         id: '22222222-2222-2222-2222-222222222222',
         name: 'Desserts',
         slug: 'desserts',
-        icon: 'http://localhost:3000/categories/desserts.jpg',
+        icon: 'https://images.unsplash.com/photo-1488477181946-6428a0291777?auto=format&fit=crop&w=800&q=80',
         displayOrder: 2,
       },
       {
         id: '33333333-3333-3333-3333-333333333333',
         name: 'Fast Food',
         slug: 'fast-food',
-        icon: 'http://localhost:3000/categories/fast-food.jpg',
+        icon: 'https://images.unsplash.com/photo-1561758033-d89a9ad46330?auto=format&fit=crop&w=800&q=80',
         displayOrder: 3,
       },
       {
         id: '44444444-4444-4444-4444-444444444444',
-        name: 'Traditional Meals',
-        slug: 'traditional-meals',
-        icon: 'http://localhost:3000/categories/traditional.jpg',
+        name: 'Traditional',
+        slug: 'traditional',
+        icon: 'https://images.unsplash.com/photo-1622325375487-70dd90e1f35f?auto=format&fit=crop&w=800&q=80',
         displayOrder: 4,
       },
       {
         id: '55555555-5555-5555-5555-555555555555',
-        name: 'Salad',
+        name: 'Salads & Healthy',
         slug: 'salad',
-        icon: 'http://localhost:3000/categories/salad.jpg',
+        icon: 'https://images.unsplash.com/photo-1512621776951-a57141f2eefd?auto=format&fit=crop&w=800&q=80',
         displayOrder: 5,
       },
     ];

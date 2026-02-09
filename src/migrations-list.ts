@@ -12,3 +12,4 @@ export { AddProductSupportToFavorites1738830000000 } from './migrations/17388300
 export { FixFavoritesConstraints1738930000000 } from './migrations/1738930000000-FixFavoritesConstraints';
 export { AddFollowsAndNotificationPreferences1770289085165 } from './migrations/1770289085165-AddFollowsAndNotificationPreferences';
 export { AddGoogleAuthFields1770389085165 } from './migrations/1770389085165-AddGoogleAuthFields';
+export { UpdateCategoryIcons1770489085165 } from './migrations/1770489085165-UpdateCategoryIcons';

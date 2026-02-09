@@ -117,10 +117,11 @@ export class CreateProductUseCase {
         return image;
       });
     } else {
-      // Assign default images from category icon (which is now a URL)
-      if (category.icon) {
+      // Assign default image from category using the centralized config
+      const categoryImages = getImagesForCategory(category.slug);
+      if (categoryImages.length > 0) {
         const image = new ProductImage();
-        image.url = category.icon;
+        image.url = categoryImages[0]; // Use first image as default
         image.position = 0;
         product.images = [image];
       }
