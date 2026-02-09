@@ -26,8 +26,9 @@ export class CreateProductDto {
   @MaxLength(1000)
   description?: string;
 
-  @ApiProperty({ example: 'uuid' })
-  @IsUUID()
+  @ApiProperty({ example: 'bakery', description: 'Category UUID or slug' })
+  @IsString()
+  @MinLength(2)
   categoryId: string;
 
   @ApiProperty({ example: 1200, description: 'Original price in cents' })
