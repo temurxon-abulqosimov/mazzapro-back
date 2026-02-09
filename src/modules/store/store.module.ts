@@ -46,6 +46,7 @@ import {
 import { IdentityModule } from '@modules/identity/identity.module';
 import { CatalogModule } from '@modules/catalog/catalog.module';
 import { BookingModule } from '@modules/booking/booking.module';
+import { Product } from '@modules/catalog/domain/entities/product.entity';
 
 @Module({
   imports: [

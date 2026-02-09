@@ -1,4 +1,3 @@
-```typescript
 import { Controller, Get, Post, Delete, Param, ParseUUIDPipe, UseGuards, HttpCode, HttpStatus, Req } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth } from '@nestjs/swagger';
 import { Public } from '@common/decorators/public.decorator';

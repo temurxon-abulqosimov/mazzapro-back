@@ -1,7 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
-import { Product } from '../../../catalog/domain/entities/product.entity';
+import { Product, ProductStatus } from '../../../catalog/domain/entities/product.entity';
 
 @Injectable()
 export class GetStoreProductsUseCase {
@@ -14,7 +14,7 @@ export class GetStoreProductsUseCase {
         return this.productRepository.find({
             where: {
                 storeId: storeId,
-                isActive: true,
+                status: ProductStatus.ACTIVE,
             },
             order: {
                 createdAt: 'DESC',
