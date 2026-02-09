@@ -35,7 +35,7 @@ interface RawProductResult {
   product_original_price: number;
   product_discounted_price: number;
   product_quantity: number;
-  product_quantity_available: number;
+  product_quantity_reserved: number; // Changed from quantity_available
   product_pickup_window_start: Date;
   product_pickup_window_end: Date;
   product_status: string;
@@ -136,7 +136,7 @@ export class DiscoveryService {
         'product.original_price AS product_original_price',
         'product.discounted_price AS product_discounted_price',
         'product.quantity AS product_quantity',
-        'product.quantity_available AS product_quantity_available',
+        'product.quantity_reserved AS product_quantity_reserved',
         'product.pickup_window_start AS product_pickup_window_start',
         'product.pickup_window_end AS product_pickup_window_end',
         'product.status AS product_status',
@@ -498,7 +498,7 @@ export class DiscoveryService {
       'product.original_price AS product_original_price',
       'product.discounted_price AS product_discounted_price',
       'product.quantity AS product_quantity',
-      'product.quantity_available AS product_quantity_available',
+      'product.quantity_reserved AS product_quantity_reserved',
       'product.pickup_window_start AS product_pickup_window_start',
       'product.pickup_window_end AS product_pickup_window_end',
       'product.status AS product_status',
@@ -583,7 +583,7 @@ export class DiscoveryService {
         discountedPrice,
         discountPercent,
         quantity: Number(raw.product_quantity),
-        quantityAvailable: Number(raw.product_quantity_available),
+        quantityAvailable: Number(raw.product_quantity) - Number(raw.product_quantity_reserved),
         pickupWindow: {
           start: new Date(raw.product_pickup_window_start),
           end: new Date(raw.product_pickup_window_end),

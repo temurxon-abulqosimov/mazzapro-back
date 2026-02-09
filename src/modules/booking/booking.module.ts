@@ -41,6 +41,7 @@ import { CatalogModule } from '@modules/catalog/catalog.module';
 import { IdentityModule } from '@modules/identity/identity.module';
 import { StoreModule } from '@modules/store/store.module';
 import { NotificationModule } from '@modules/notification/notification.module';
+import { ReviewModule } from '@modules/review/review.module';
 import { RedisModule } from '@common/redis/redis.module';
 import { Product } from '@modules/catalog/domain/entities/product.entity';
 
@@ -52,6 +53,7 @@ import { Product } from '@modules/catalog/domain/entities/product.entity';
     forwardRef(() => IdentityModule),
     forwardRef(() => StoreModule),
     forwardRef(() => NotificationModule),
+    forwardRef(() => ReviewModule),
     RedisModule,
   ],
   controllers: [BookingController, SellerOrderController],
@@ -98,4 +100,4 @@ import { Product } from '@modules/catalog/domain/entities/product.entity';
   ],
   exports: [BOOKING_REPOSITORY],
 })
-export class BookingModule {}
+export class BookingModule { }
