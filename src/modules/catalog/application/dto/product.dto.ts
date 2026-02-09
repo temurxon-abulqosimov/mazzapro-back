@@ -29,6 +29,7 @@ export class CreateProductDto {
   @ApiProperty({ example: 'bakery', description: 'Category UUID or slug' })
   @IsString()
   @MinLength(2)
+  // Allow slug or UUID
   categoryId: string;
 
   @ApiProperty({ example: 1200, description: 'Original price in cents' })
