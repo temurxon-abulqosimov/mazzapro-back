@@ -14,6 +14,12 @@ interface DashboardResult {
     id: string;
     name: string;
     imageUrl: string | null;
+    categories: {
+      id: string;
+      name: string;
+      slug: string;
+      icon: string | null;
+    }[];
   };
   stats: {
     period: string;
@@ -32,7 +38,7 @@ export class GetSellerDashboardUseCase {
     private readonly sellerRepository: ISellerRepository,
     @Inject(STORE_REPOSITORY)
     private readonly storeRepository: IStoreRepository,
-  ) {}
+  ) { }
 
   async execute(userId: string): Promise<DashboardResult> {
     // Get seller
@@ -60,6 +66,12 @@ export class GetSellerDashboardUseCase {
         id: store.id,
         name: store.name,
         imageUrl: store.imageUrl,
+        categories: (store.categories || []).map((c) => ({
+          id: c.id,
+          name: c.name,
+          slug: c.slug,
+          icon: c.icon,
+        })),
       },
       stats: {
         period: 'all_time',

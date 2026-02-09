@@ -14,6 +14,11 @@ import {
   IStoreRepository,
   STORE_REPOSITORY,
 } from '@modules/store/domain/repositories/store.repository.interface';
+import {
+  ICategoryRepository,
+  CATEGORY_REPOSITORY,
+} from '@modules/store/domain/repositories/category.repository.interface';
+import { getImagesForCategory } from '@config/category-images.config';
 import { CreateProductDto } from '../dto/product.dto';
 import { ProductCreatedEvent } from '../../domain/events/product-created.event';
 import {
@@ -33,6 +38,8 @@ export class CreateProductUseCase {
     private readonly sellerRepository: ISellerRepository,
     @Inject(STORE_REPOSITORY)
     private readonly storeRepository: IStoreRepository,
+    @Inject(CATEGORY_REPOSITORY)
+    private readonly categoryRepository: ICategoryRepository,
     private readonly eventEmitter: EventEmitter2,
     private readonly redisService: RedisService,
   ) { }
@@ -99,6 +106,18 @@ export class CreateProductUseCase {
         image.position = index;
         return image;
       });
+    } else {
+      // Assign default images from category
+      const category = await this.categoryRepository.findById(dto.categoryId);
+      if (category) {
+        const defaultImages = getImagesForCategory(category.slug);
+        product.images = defaultImages.map((imageUrl, index) => {
+          const image = new ProductImage();
+          image.url = imageUrl;
+          image.position = index;
+          return image;
+        });
+      }
     }
 
     const savedProduct = await this.productRepository.save(product);

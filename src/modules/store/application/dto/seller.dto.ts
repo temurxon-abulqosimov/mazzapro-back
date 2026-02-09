@@ -74,6 +74,12 @@ export class SellerDashboardResponseDto {
     id: string;
     name: string;
     imageUrl: string | null;
+    categories: {
+      id: string;
+      name: string;
+      slug: string;
+      icon: string | null;
+    }[];
   };
 
   @ApiProperty()
