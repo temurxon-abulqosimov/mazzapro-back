@@ -63,6 +63,20 @@ export class StoreController {
     };
   }
 
+  @Get(':id/products')
+  @ApiOperation({ summary: 'Get all active products for a store' })
+  @ApiResponse({ status: 200, description: 'Return all products for the store.' })
+  async getStoreProducts(@Param('id') id: string) {
+    return this.getStoreProductsUseCase.execute(id);
+  }
+
+  // TODO: Remove this debug endpoint
+  @Get(':id/products/debug')
+  @ApiOperation({ summary: 'DEBUG: Get all products for a store (ignoring status)' })
+  async getStoreProductsDebug(@Param('id') id: string) {
+    return this.getStoreProductsUseCase.executeDebug(id);
+  }
+
   @Post(':id/follow')
   @UseGuards(JwtAuthGuard)
   @ApiBearerAuth('JWT-auth')
