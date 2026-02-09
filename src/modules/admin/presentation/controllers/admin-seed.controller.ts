@@ -6,7 +6,7 @@ import { DataSource } from 'typeorm';
 @ApiTags('Admin')
 @Controller('admin/seed')
 export class AdminSeedController {
-  constructor(private readonly dataSource: DataSource) {}
+  constructor(private readonly dataSource: DataSource) { }
 
   @Post('mock-data')
   @Public() // IMPORTANT: Remove this in production or add proper auth!
@@ -26,24 +26,31 @@ export class AdminSeedController {
       },
       {
         id: '22222222-2222-2222-2222-222222222222',
-        name: 'Cafe',
-        slug: 'cafe',
-        icon: '☕',
+        name: 'Desserts',
+        slug: 'desserts',
+        icon: '🍰',
         displayOrder: 2,
       },
       {
         id: '33333333-3333-3333-3333-333333333333',
-        name: 'Grocery',
-        slug: 'grocery',
-        icon: '🛒',
+        name: 'Fast Food',
+        slug: 'fast-food',
+        icon: '🍔',
         displayOrder: 3,
       },
       {
         id: '44444444-4444-4444-4444-444444444444',
-        name: 'Restaurant',
-        slug: 'restaurant',
-        icon: '🍽️',
+        name: 'Traditional Meals',
+        slug: 'traditional-meals',
+        icon: 'plov',
         displayOrder: 4,
+      },
+      {
+        id: '55555555-5555-5555-5555-555555555555',
+        name: 'Salad',
+        slug: 'salad',
+        icon: '🥗',
+        displayOrder: 5,
       },
     ];
 
@@ -147,7 +154,7 @@ export class AdminSeedController {
         imageUrl:
           'https://images.unsplash.com/photo-1543083115-638c32cd3d58?w=800',
         rating: 4.3,
-        categoryId: categories[2].id,
+        categoryId: categories[3].id, // Traditional (as placeholder)
       },
     ];
 
@@ -283,38 +290,38 @@ export class AdminSeedController {
           },
         ],
       },
-      // Grocery Products
+      // Grocery Products -> Salad (using Salad category)
       {
         id: 'prod-0006-0000-0000-000000000006',
         storeId: stores[2].id,
-        categoryId: categories[2].id,
-        name: 'Fresh Produce Box',
-        description: 'Mixed seasonal vegetables and fruits',
+        categoryId: categories[4].id, // Salad
+        name: 'Fresh Garden Salad',
+        description: 'Mixed seasonal vegetables',
         originalPrice: 2500,
         discountedPrice: 800,
         quantity: 7,
         images: [
           {
-            url: 'https://images.unsplash.com/photo-1543083115-638c32cd3d58?w=800',
+            url: 'https://images.unsplash.com/photo-1512621776951-a57141f2eefd?w=800',
             thumbnailUrl:
-              'https://images.unsplash.com/photo-1543083115-638c32cd3d58?w=300',
+              'https://images.unsplash.com/photo-1512621776951-a57141f2eefd?w=300',
           },
         ],
       },
       {
         id: 'prod-0007-0000-0000-000000000007',
         storeId: stores[2].id,
-        categoryId: categories[2].id,
-        name: 'Organic Salad Kit',
-        description: 'Pre-washed greens with dressing',
+        categoryId: categories[4].id, // Salad
+        name: 'Caesar Salad',
+        description: 'Classic Caesar with croutons',
         originalPrice: 1000,
         discountedPrice: 400,
         quantity: 10,
         images: [
           {
-            url: 'https://images.unsplash.com/photo-1512621776951-a57141f2eefd?w=800',
+            url: 'https://images.unsplash.com/photo-1550304943-4f24f54ddde9?w=800',
             thumbnailUrl:
-              'https://images.unsplash.com/photo-1512621776951-a57141f2eefd?w=300',
+              'https://images.unsplash.com/photo-1550304943-4f24f54ddde9?w=300',
           },
         ],
       },
