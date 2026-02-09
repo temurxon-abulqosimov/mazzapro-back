@@ -84,10 +84,20 @@ export class CreateProductUseCase {
       );
     }
 
+    // Resolve category - support both UUID and slug
+    const isUUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(dto.categoryId);
+    let category = isUUID
+      ? await this.categoryRepository.findById(dto.categoryId)
+      : await this.categoryRepository.findBySlug(dto.categoryId);
+
+    if (!category) {
+      throw new EntityNotFoundException('Category', dto.categoryId);
+    }
+
     // Create product
     const product = new Product();
     product.storeId = store.id;
-    product.categoryId = dto.categoryId;
+    product.categoryId = category.id;
     product.name = dto.name;
     product.description = dto.description || null;
     product.originalPrice = dto.originalPrice;
@@ -108,8 +118,7 @@ export class CreateProductUseCase {
       });
     } else {
       // Assign default images from category icon (which is now a URL)
-      const category = await this.categoryRepository.findById(dto.categoryId);
-      if (category && category.icon) {
+      if (category.icon) {
         const image = new ProductImage();
         image.url = category.icon;
         image.position = 0;
