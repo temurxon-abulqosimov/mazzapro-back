@@ -14,6 +14,7 @@ export class AdminSeedController {
   @ApiResponse({ status: 201, description: 'Mock data created' })
   async seedMockData(): Promise<{ message: string; summary: string }> {
     const marketId = '550e8400-e29b-41d4-a716-446655440000'; // NYC market
+    const baseUrl = process.env.APP_URL || 'http://localhost:3000';
 
     // 1. Create Categories with proper public image URLs
     const categories = [
@@ -21,35 +22,35 @@ export class AdminSeedController {
         id: '11111111-1111-1111-1111-111111111111',
         name: 'Bakery',
         slug: 'bakery',
-        icon: 'https://images.unsplash.com/photo-1509440159596-0249088772ff?auto=format&fit=crop&w=800&q=80',
+        icon: `${baseUrl}/categories/bakery.jpg`,
         displayOrder: 1,
       },
       {
         id: '22222222-2222-2222-2222-222222222222',
         name: 'Desserts',
         slug: 'desserts',
-        icon: 'https://images.unsplash.com/photo-1488477181946-6428a0291777?auto=format&fit=crop&w=800&q=80',
+        icon: `${baseUrl}/categories/desserts.jpg`,
         displayOrder: 2,
       },
       {
         id: '33333333-3333-3333-3333-333333333333',
         name: 'Fast Food',
         slug: 'fast-food',
-        icon: 'https://images.unsplash.com/photo-1561758033-d89a9ad46330?auto=format&fit=crop&w=800&q=80',
+        icon: `${baseUrl}/categories/fast-food.jpg`,
         displayOrder: 3,
       },
       {
         id: '44444444-4444-4444-4444-444444444444',
         name: 'Traditional',
         slug: 'traditional',
-        icon: 'https://images.unsplash.com/photo-1622325375487-70dd90e1f35f?auto=format&fit=crop&w=800&q=80',
+        icon: `${baseUrl}/categories/traditional.jpg`,
         displayOrder: 4,
       },
       {
         id: '55555555-5555-5555-5555-555555555555',
         name: 'Salads & Healthy',
         slug: 'salad',
-        icon: 'https://images.unsplash.com/photo-1512621776951-a57141f2eefd?auto=format&fit=crop&w=800&q=80',
+        icon: `${baseUrl}/categories/salad.jpg`,
         displayOrder: 5,
       },
     ];
@@ -123,8 +124,7 @@ export class AdminSeedController {
         city: 'New York',
         lat: 40.7128,
         lng: -74.006,
-        imageUrl:
-          'https://images.unsplash.com/photo-1509440159596-0249088772ff?w=800',
+        imageUrl: `${baseUrl}/categories/bakery.jpg`,
         rating: 4.5,
         categoryId: categories[0].id,
       },
@@ -137,8 +137,7 @@ export class AdminSeedController {
         city: 'New York',
         lat: 40.758,
         lng: -73.9855,
-        imageUrl:
-          'https://images.unsplash.com/photo-1554118811-1e0d58224f24?w=800',
+        imageUrl: `${baseUrl}/categories/desserts.jpg`,
         rating: 4.7,
         categoryId: categories[1].id,
       },
@@ -151,8 +150,7 @@ export class AdminSeedController {
         city: 'New York',
         lat: 40.7689,
         lng: -73.9658,
-        imageUrl:
-          'https://images.unsplash.com/photo-1543083115-638c32cd3d58?w=800',
+        imageUrl: `${baseUrl}/categories/traditional.jpg`,
         rating: 4.3,
         categoryId: categories[3].id, // Traditional (as placeholder)
       },
@@ -215,9 +213,8 @@ export class AdminSeedController {
         quantity: 10,
         images: [
           {
-            url: 'https://images.unsplash.com/photo-1509440159596-0249088772ff?w=800',
-            thumbnailUrl:
-              'https://images.unsplash.com/photo-1509440159596-0249088772ff?w=300',
+            url: `${baseUrl}/categories/bakery.jpg`,
+            thumbnailUrl: `${baseUrl}/categories/bakery.jpg`,
           },
         ],
       },
@@ -232,9 +229,8 @@ export class AdminSeedController {
         quantity: 5,
         images: [
           {
-            url: 'https://images.unsplash.com/photo-1555507036-ab1f4038808a?w=800',
-            thumbnailUrl:
-              'https://images.unsplash.com/photo-1555507036-ab1f4038808a?w=300',
+            url: `${baseUrl}/categories/bakery.jpg`,
+            thumbnailUrl: `${baseUrl}/categories/bakery.jpg`,
           },
         ],
       },
@@ -249,9 +245,8 @@ export class AdminSeedController {
         quantity: 8,
         images: [
           {
-            url: 'https://images.unsplash.com/photo-1509440159596-0249088772ff?w=800',
-            thumbnailUrl:
-              'https://images.unsplash.com/photo-1509440159596-0249088772ff?w=300',
+            url: `${baseUrl}/categories/bakery.jpg`,
+            thumbnailUrl: `${baseUrl}/categories/bakery.jpg`,
           },
         ],
       },
@@ -267,9 +262,8 @@ export class AdminSeedController {
         quantity: 15,
         images: [
           {
-            url: 'https://images.unsplash.com/photo-1554118811-1e0d58224f24?w=800',
-            thumbnailUrl:
-              'https://images.unsplash.com/photo-1554118811-1e0d58224f24?w=300',
+            url: `${baseUrl}/categories/desserts.jpg`,
+            thumbnailUrl: `${baseUrl}/categories/desserts.jpg`,
           },
         ],
       },
@@ -284,9 +278,8 @@ export class AdminSeedController {
         quantity: 12,
         images: [
           {
-            url: 'https://images.unsplash.com/photo-1495474472287-4d71bcdd2085?w=800',
-            thumbnailUrl:
-              'https://images.unsplash.com/photo-1495474472287-4d71bcdd2085?w=300',
+            url: `${baseUrl}/categories/desserts.jpg`,
+            thumbnailUrl: `${baseUrl}/categories/desserts.jpg`,
           },
         ],
       },
@@ -302,9 +295,8 @@ export class AdminSeedController {
         quantity: 7,
         images: [
           {
-            url: 'https://images.unsplash.com/photo-1512621776951-a57141f2eefd?w=800',
-            thumbnailUrl:
-              'https://images.unsplash.com/photo-1512621776951-a57141f2eefd?w=300',
+            url: `${baseUrl}/categories/salad.jpg`,
+            thumbnailUrl: `${baseUrl}/categories/salad.jpg`,
           },
         ],
       },
@@ -319,9 +311,8 @@ export class AdminSeedController {
         quantity: 10,
         images: [
           {
-            url: 'https://images.unsplash.com/photo-1550304943-4f24f54ddde9?w=800',
-            thumbnailUrl:
-              'https://images.unsplash.com/photo-1550304943-4f24f54ddde9?w=300',
+            url: `${baseUrl}/categories/salad.jpg`,
+            thumbnailUrl: `${baseUrl}/categories/salad.jpg`,
           },
         ],
       },
