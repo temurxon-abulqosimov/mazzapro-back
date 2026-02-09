@@ -1,4 +1,4 @@
-import { Module } from '@nestjs/common';
+import { Module, forwardRef } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { Review } from './domain/entities/review.entity';
 import { ReviewController } from './presentation/controllers/review.controller';
@@ -13,7 +13,7 @@ import { CatalogModule } from '../catalog/catalog.module';
 @Module({
     imports: [
         TypeOrmModule.forFeature([Review]),
-        BookingModule,
+        forwardRef(() => BookingModule),
         StoreModule,
         IdentityModule,
         CatalogModule,
