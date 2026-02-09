@@ -44,10 +44,11 @@ import { NotificationModule } from '@modules/notification/notification.module';
 import { ReviewModule } from '@modules/review/review.module';
 import { RedisModule } from '@common/redis/redis.module';
 import { Product } from '@modules/catalog/domain/entities/product.entity';
+import { Review } from '@modules/review/domain/entities/review.entity';
 
 @Module({
   imports: [
-    TypeOrmModule.forFeature([Booking, Payment, Product]),
+    TypeOrmModule.forFeature([Booking, Payment, Product, Review]),
     ConfigModule,
     forwardRef(() => CatalogModule),
     forwardRef(() => IdentityModule),
