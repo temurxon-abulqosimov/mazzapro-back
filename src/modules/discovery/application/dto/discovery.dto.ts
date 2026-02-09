@@ -51,6 +51,11 @@ export class DiscoverProductsDto extends PaginationDto {
   @IsString()
   categories?: string;
 
+  @ApiPropertyOptional({ description: 'Store ID to filter products' })
+  @IsOptional()
+  @IsString()
+  storeId?: string;
+
   @ApiPropertyOptional({ description: 'Minimum price in cents' })
   @IsOptional()
   @Type(() => Number)
