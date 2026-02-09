@@ -5,6 +5,8 @@ import { ThrottlerModule } from '@nestjs/throttler';
 import { ScheduleModule } from '@nestjs/schedule';
 import { APP_GUARD } from '@nestjs/core';
 import { ThrottlerGuard } from '@nestjs/throttler';
+import { ServeStaticModule } from '@nestjs/serve-static';
+import { join } from 'path';
 
 // Config
 import { databaseConfig } from '@config/database.config';
@@ -46,6 +48,11 @@ import { EventEmitterModule } from '@nestjs/event-emitter';
         firebaseConfig,
       ],
       envFilePath: ['.env.local', '.env'],
+    }),
+
+    // Serve Static Assets (public folder)
+    ServeStaticModule.forRoot({
+      rootPath: join(__dirname, '..', 'public'),
     }),
 
     // Database

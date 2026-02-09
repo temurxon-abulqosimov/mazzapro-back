@@ -107,16 +107,13 @@ export class CreateProductUseCase {
         return image;
       });
     } else {
-      // Assign default images from category
+      // Assign default images from category icon (which is now a URL)
       const category = await this.categoryRepository.findById(dto.categoryId);
-      if (category) {
-        const defaultImages = getImagesForCategory(category.slug);
-        product.images = defaultImages.map((imageUrl, index) => {
-          const image = new ProductImage();
-          image.url = imageUrl;
-          image.position = index;
-          return image;
-        });
+      if (category && category.icon) {
+        const image = new ProductImage();
+        image.url = category.icon;
+        image.position = 0;
+        product.images = [image];
       }
     }
 
