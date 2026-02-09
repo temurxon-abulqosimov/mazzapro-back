@@ -59,6 +59,10 @@ export class GetSellerDashboardUseCase {
     if (!store) {
       throw new EntityNotFoundException('Store', seller.id);
     }
+    console.log(`[GetSellerDashboard] Store found: ${store.id}, Categories: ${store.categories?.length || 0}`);
+    if (store.categories?.length) {
+      console.log(`[GetSellerDashboard] Category 0: ${JSON.stringify(store.categories[0])}`);
+    }
 
     // TODO: Calculate actual stats from products and bookings
     return {
