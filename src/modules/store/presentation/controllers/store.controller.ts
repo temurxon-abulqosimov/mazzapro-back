@@ -67,14 +67,34 @@ export class StoreController {
   @ApiOperation({ summary: 'Get all active products for a store' })
   @ApiResponse({ status: 200, description: 'Return all products for the store.' })
   async getStoreProducts(@Param('id') id: string) {
-    return this.getStoreProductsUseCase.execute(id);
-  }
+    const products = await this.getStoreProductsUseCase.execute(id);
 
-  // TODO: Remove this debug endpoint
-  @Get(':id/products/debug')
-  @ApiOperation({ summary: 'DEBUG: Get all products for a store (ignoring status)' })
-  async getStoreProductsDebug(@Param('id') id: string) {
-    return this.getStoreProductsUseCase.executeDebug(id);
+    return products.map(product => {
+      // Create pickup window object expected by frontend
+      const start = new Date(product.pickupWindowStart);
+      const end = new Date(product.pickupWindowEnd);
+
+      const startTime = start.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', hour12: true });
+      const endTime = end.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', hour12: true });
+      const label = `${startTime} - ${endTime}`;
+
+      const today = new Date();
+      const isToday = start.getDate() === today.getDate() &&
+        start.getMonth() === today.getMonth() &&
+        start.getFullYear() === today.getFullYear();
+
+      const dateLabel = isToday ? 'Today' : start.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' });
+
+      return {
+        ...product,
+        pickupWindow: {
+          start: product.pickupWindowStart,
+          end: product.pickupWindowEnd,
+          label,
+          dateLabel
+        }
+      };
+    });
   }
 
   @Post(':id/follow')

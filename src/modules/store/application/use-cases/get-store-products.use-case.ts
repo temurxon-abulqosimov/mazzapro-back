@@ -11,8 +11,7 @@ export class GetStoreProductsUseCase {
     ) { }
 
     async execute(storeId: string): Promise<Product[]> {
-        console.log(`🔍 GetStoreProductsUseCase: Fetching products for store ${storeId}`);
-        const products = await this.productRepository.find({
+        return this.productRepository.find({
             where: {
                 storeId: storeId,
                 status: ProductStatus.ACTIVE,
@@ -22,22 +21,5 @@ export class GetStoreProductsUseCase {
             },
             relations: ['images', 'category'],
         });
-        console.log(`✅ GetStoreProductsUseCase: Found ${products.length} active products for store ${storeId}`);
-        return products;
-    }
-
-    async executeDebug(storeId: string): Promise<Product[]> {
-        console.log(`🔍 DEBUG: Fetching ALL products for store ${storeId}`);
-        const products = await this.productRepository.find({
-            where: {
-                storeId: storeId,
-            },
-            order: {
-                createdAt: 'DESC',
-            },
-            relations: ['images', 'category'],
-        });
-        console.log(`✅ DEBUG: Found ${products.length} TOTAL products for store ${storeId}`);
-        return products;
     }
 }
