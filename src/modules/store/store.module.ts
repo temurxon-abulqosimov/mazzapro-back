@@ -86,6 +86,7 @@ import { Product } from '@modules/catalog/domain/entities/product.entity';
     FollowStoreUseCase,
     UnfollowStoreUseCase,
     GetFollowedStoresUseCase,
+    GetStoreProductsUseCase,
   ],
   exports: [
     CATEGORY_REPOSITORY,
