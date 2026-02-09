@@ -14,7 +14,7 @@ import { CatalogModule } from '../catalog/catalog.module';
     imports: [
         TypeOrmModule.forFeature([Review]),
         forwardRef(() => BookingModule),
-        StoreModule,
+        forwardRef(() => StoreModule),
         IdentityModule,
         CatalogModule,
     ],
