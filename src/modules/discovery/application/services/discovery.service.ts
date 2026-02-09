@@ -241,7 +241,7 @@ export class DiscoveryService {
         discountedPrice,
         discountPercent,
         quantity: Number(raw.product_quantity),
-        quantityAvailable: Number(raw.product_quantity_available),
+        quantityAvailable: Number(raw.product_quantity) - Number(raw.product_quantity_reserved),
         pickupWindow: {
           start: new Date(raw.product_pickup_window_start),
           end: new Date(raw.product_pickup_window_end),
