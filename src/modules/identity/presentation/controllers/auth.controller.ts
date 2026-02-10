@@ -24,6 +24,9 @@ import {
   RegisterDeviceTokenDto,
   AuthResponseDto,
   GoogleAuthDto,
+  VerifyEmailDto,
+  ForgotPasswordDto,
+  ResetPasswordDto,
 } from '../../application/dto';
 import {
   RegisterUserUseCase,
@@ -32,6 +35,9 @@ import {
   LogoutUserUseCase,
   RegisterDeviceTokenUseCase,
   GoogleAuthUseCase,
+  VerifyEmailUseCase,
+  ForgotPasswordUseCase,
+  ResetPasswordUseCase,
 } from '../../application/use-cases';
 import { RefreshResult } from '../../application/use-cases/refresh-tokens.use-case';
 
@@ -45,7 +51,10 @@ export class AuthController {
     private readonly logoutUserUseCase: LogoutUserUseCase,
     private readonly registerDeviceTokenUseCase: RegisterDeviceTokenUseCase,
     private readonly googleAuthUseCase: GoogleAuthUseCase,
-  ) {}
+    private readonly verifyEmailUseCase: VerifyEmailUseCase,
+    private readonly forgotPasswordUseCase: ForgotPasswordUseCase,
+    private readonly resetPasswordUseCase: ResetPasswordUseCase,
+  ) { }
 
   @Post('register')
   @Public()
@@ -151,5 +160,40 @@ export class AuthController {
   ) {
     const id = await this.registerDeviceTokenUseCase.execute(user.id, dto);
     return { id, registered: true };
+  }
+
+  @Post('verify-email')
+  @Public()
+  @HttpCode(HttpStatus.OK)
+  @Throttle({ default: { limit: 5, ttl: 60000 } })
+  @ApiOperation({ summary: 'Verify email address with code' })
+  @ApiResponse({ status: 200, description: 'Email verified successfully' })
+  @ApiResponse({ status: 400, description: 'Invalid or expired token' })
+  async verifyEmail(@Body() dto: VerifyEmailDto) {
+    await this.verifyEmailUseCase.execute(dto.token);
+    return { message: 'Email verified successfully' };
+  }
+
+  @Post('forgot-password')
+  @Public()
+  @HttpCode(HttpStatus.OK)
+  @Throttle({ default: { limit: 3, ttl: 60000 } })
+  @ApiOperation({ summary: 'Request password reset with email' })
+  @ApiResponse({ status: 200, description: 'If email exists, reset code sent' })
+  async forgotPassword(@Body() dto: ForgotPasswordDto) {
+    await this.forgotPasswordUseCase.execute(dto.email);
+    return { message: 'If your email is registered, you will receive a reset code shortly' };
+  }
+
+  @Post('reset-password')
+  @Public()
+  @HttpCode(HttpStatus.OK)
+  @Throttle({ default: { limit: 5, ttl: 60000 } })
+  @ApiOperation({ summary: 'Reset password with code' })
+  @ApiResponse({ status: 200, description: 'Password reset successfully' })
+  @ApiResponse({ status: 400, description: 'Invalid or expired token' })
+  async resetPassword(@Body() dto: ResetPasswordDto) {
+    await this.resetPasswordUseCase.execute(dto.token, dto.newPassword);
+    return { message: 'Password has been reset successfully' };
   }
 }

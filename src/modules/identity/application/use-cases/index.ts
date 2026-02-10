@@ -6,3 +6,6 @@ export * from './register-device-token.use-case';
 export * from './get-user-profile.use-case';
 export * from './update-user-profile.use-case';
 export * from './google-auth.use-case';
+export * from './verify-email.use-case';
+export * from './forgot-password.use-case';
+export * from './reset-password.use-case';

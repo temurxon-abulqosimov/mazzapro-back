@@ -14,6 +14,8 @@ import {
   JwtTokenService,
   TokenPair,
 } from '../../infrastructure/services/jwt-token.service';
+import { TokenService } from '../../infrastructure/services/token.service';
+import { EmailService } from '@modules/notification/infrastructure/services/email.service';
 import { RegisterDto } from '../dto/register.dto';
 import { EmailAlreadyExistsException } from '@common/exceptions';
 import { UserRole } from '@common/types';
@@ -32,6 +34,8 @@ export class RegisterUserUseCase {
     private readonly refreshTokenRepository: IRefreshTokenRepository,
     private readonly passwordService: PasswordService,
     private readonly jwtTokenService: JwtTokenService,
+    private readonly tokenService: TokenService,
+    private readonly emailService: EmailService,
   ) { }
 
   async execute(dto: RegisterDto): Promise<RegisterResult> {
@@ -73,9 +77,17 @@ export class RegisterUserUseCase {
 
     await this.refreshTokenRepository.save(refreshToken);
 
+    // Send verification email
+    await this.sendVerificationEmail(savedUser.id, savedUser.email);
+
     return {
       user: savedUser,
       tokens,
     };
+  }
+
+  private async sendVerificationEmail(userId: string, email: string): Promise<void> {
+    const token = await this.tokenService.createVerificationToken(userId);
+    await this.emailService.sendVerificationEmail(email, token);
   }
 }

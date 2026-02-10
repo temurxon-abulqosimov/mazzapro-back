@@ -21,6 +21,7 @@ import {
 
 // Services
 import { PasswordService, JwtTokenService } from './infrastructure/services';
+import { TokenService } from './infrastructure/services/token.service';
 
 // Strategies
 import { JwtStrategy } from './infrastructure/strategies';
@@ -35,11 +36,15 @@ import {
   GetUserProfileUseCase,
   UpdateUserProfileUseCase,
   GoogleAuthUseCase,
+  VerifyEmailUseCase,
+  ForgotPasswordUseCase,
+  ResetPasswordUseCase,
 } from './application/use-cases';
 
 // Controllers
 import { AuthController, UsersController } from './presentation/controllers';
 import { StoreModule } from '../store/store.module';
+import { NotificationModule } from '@modules/notification/notification.module';
 
 @Module({
   imports: [
@@ -56,6 +61,7 @@ import { StoreModule } from '../store/store.module';
       inject: [ConfigService],
     }),
     forwardRef(() => StoreModule),
+    NotificationModule,
   ],
   controllers: [AuthController, UsersController],
   providers: [
@@ -76,6 +82,7 @@ import { StoreModule } from '../store/store.module';
     // Services
     PasswordService,
     JwtTokenService,
+    TokenService,
 
     // Strategies
     JwtStrategy,
@@ -89,6 +96,9 @@ import { StoreModule } from '../store/store.module';
     GetUserProfileUseCase,
     UpdateUserProfileUseCase,
     GoogleAuthUseCase,
+    VerifyEmailUseCase,
+    ForgotPasswordUseCase,
+    ResetPasswordUseCase,
   ],
   exports: [
     USER_REPOSITORY,
@@ -96,6 +106,7 @@ import { StoreModule } from '../store/store.module';
     JwtTokenService,
     JwtModule,
     PassportModule,
+    TokenService,
   ],
 })
 export class IdentityModule { }
