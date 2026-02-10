@@ -29,11 +29,9 @@ import {
   UnfollowStoreUseCase,
   GetFollowedStoresUseCase,
   GetStoreProductsUseCase,
-} from './application/use-cases';
-import {
   GetDashboardStatsUseCase,
   GetLiveOrdersUseCase,
-} from '@modules/seller/application/use-cases';
+} from './application/use-cases';
 
 // Controllers
 import {

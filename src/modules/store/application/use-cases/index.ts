@@ -7,3 +7,5 @@ export * from './follow-store.use-case';
 export * from './unfollow-store.use-case';
 export * from './get-followed-stores.use-case';
 export * from './get-store-products.use-case';
+export * from './get-dashboard-stats.use-case';
+export * from './get-live-orders.use-case';

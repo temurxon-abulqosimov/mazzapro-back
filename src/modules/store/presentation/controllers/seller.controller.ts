@@ -28,11 +28,9 @@ import {
   ApplySellerUseCase,
   GetSellerDashboardUseCase,
   ToggleStoreStatusUseCase,
-} from '../../application/use-cases';
-import {
   GetDashboardStatsUseCase,
   GetLiveOrdersUseCase,
-} from '@modules/seller/application/use-cases';
+} from '../../application/use-cases';
 
 @ApiTags('Seller')
 @Controller('seller')
@@ -45,7 +43,7 @@ export class SellerController {
     private readonly getDashboardStatsUseCase: GetDashboardStatsUseCase,
     private readonly toggleStoreStatusUseCase: ToggleStoreStatusUseCase,
     private readonly getLiveOrdersUseCase: GetLiveOrdersUseCase,
-  ) {}
+  ) { }
 
   @Post('apply')
   @ApiOperation({ summary: 'Apply to become a seller' })
