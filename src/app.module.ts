@@ -52,6 +52,10 @@ import { EventEmitterModule } from '@nestjs/event-emitter';
     // Serve Static Assets (public folder)
     ServeStaticModule.forRoot({
       rootPath: join(__dirname, '..', 'public'),
+      serveRoot: '/public', // Optional: Serve under a prefix to avoid conflict with API
+      serveStaticOptions: {
+        index: false, // Don't look for index.html as fallback
+      },
     }),
 
     // Database
