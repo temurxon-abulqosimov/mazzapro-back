@@ -19,7 +19,8 @@ export class EmailService {
         const pass = this.configService.get<string>('EMAIL_PASS');
         this.from = this.configService.get<string>('EMAIL_FROM') || '"Mazza App" <no-reply@mazza.app>';
 
-        if (host && port && user && pass) {
+        // Check if credentials are provided AND not the default example values
+        if (host && host !== 'smtp.example.com' && port && user && pass) {
             this.transporter = nodemailer.createTransport({
                 host,
                 port,
@@ -32,7 +33,7 @@ export class EmailService {
             this.logger.log(`Email service initialized with host: ${host}`);
         } else {
             this.logger.warn(
-                'Email credentials not provided. Email service running in MOCK mode. Emails will be logged to console.',
+                'Email credentials not provided or using example host. Email service running in MOCK mode. Emails will be logged to console.',
             );
         }
     }
@@ -53,7 +54,9 @@ export class EmailService {
             this.logger.log(`Email sent to ${to}`);
         } catch (error) {
             this.logger.error(`Failed to send email to ${to}`, error.stack);
-            // Don't throw error to prevent blocking the flow, just log it
+            // Fallback to console log so the dev can still see the OTP
+            this.logger.warn('Falling back to console logging due to send failure.');
+            this.logger.log(`[FALLBACK EMAIL] To: ${to} | Subject: ${subject} | Content: ${html}`);
         }
     }
 
