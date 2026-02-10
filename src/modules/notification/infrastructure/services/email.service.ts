@@ -29,7 +29,12 @@ export class EmailService {
                     user,
                     pass,
                 },
-            });
+                tls: {
+                    ciphers: 'SSLv3',
+                },
+                // Force IPv4 to avoid ENETUNREACH on some networks/Docker
+                family: 4,
+            } as any);
             this.logger.log(`Email service initialized with host: ${host}`);
         } else {
             this.logger.warn(
