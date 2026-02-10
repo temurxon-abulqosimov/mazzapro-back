@@ -34,6 +34,10 @@ export class EmailService {
                 },
                 // Force IPv4 to avoid ENETUNREACH on some networks/Docker
                 family: 4,
+                // Add timeouts to fail faster if blocked
+                connectionTimeout: 10000, // 10 seconds
+                greetingTimeout: 5000, // 5 seconds
+                socketTimeout: 10000, // 10 seconds
             } as any);
             this.logger.log(`Email service initialized with host: ${host}`);
         } else {
