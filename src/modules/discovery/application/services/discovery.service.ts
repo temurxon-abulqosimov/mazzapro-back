@@ -115,11 +115,21 @@ export class DiscoveryService {
     let categoryIds: string[] = [];
     if (category) {
       const cat = await this.categoryRepository.findOne({ where: { slug: category } });
-      if (cat) categoryIds = [cat.id];
+      if (cat) {
+        categoryIds = [cat.id];
+      } else {
+        // Category not found, return empty result
+        return createPaginatedResult([], limit);
+      }
     } else if (categories) {
       const slugs = categories.split(',');
       const cats = await this.categoryRepository.find({ where: { slug: In(slugs) } });
-      categoryIds = cats.map(c => c.id);
+      if (cats.length > 0) {
+        categoryIds = cats.map(c => c.id);
+      } else {
+        // Categories not found, return empty result
+        return createPaginatedResult([], limit);
+      }
     }
 
     // Build query with SQL distance calculation

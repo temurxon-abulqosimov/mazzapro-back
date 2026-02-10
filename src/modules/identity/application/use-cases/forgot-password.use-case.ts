@@ -15,8 +15,8 @@ export class ForgotPasswordUseCase {
     async execute(email: string): Promise<void> {
         const user = await this.userRepository.findByEmail(email);
         if (!user) {
-            // Don't reveal if user exists
-            return;
+            // As per requirements: return error if email not found
+            throw new NotFoundException('User with this email does not exist');
         }
 
         // Generate 6-digit OTP
