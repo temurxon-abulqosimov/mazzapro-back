@@ -9,3 +9,4 @@ export * from './google-auth.use-case';
 export * from './verify-email.use-case';
 export * from './forgot-password.use-case';
 export * from './reset-password.use-case';
+export * from './verify-otp.use-case';

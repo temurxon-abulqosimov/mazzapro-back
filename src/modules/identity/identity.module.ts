@@ -39,6 +39,7 @@ import {
   VerifyEmailUseCase,
   ForgotPasswordUseCase,
   ResetPasswordUseCase,
+  VerifyOtpUseCase,
 } from './application/use-cases';
 
 // Controllers
@@ -99,6 +100,7 @@ import { NotificationModule } from '@modules/notification/notification.module';
     VerifyEmailUseCase,
     ForgotPasswordUseCase,
     ResetPasswordUseCase,
+    VerifyOtpUseCase,
   ],
   exports: [
     USER_REPOSITORY,

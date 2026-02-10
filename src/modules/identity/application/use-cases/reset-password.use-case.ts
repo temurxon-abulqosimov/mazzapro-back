@@ -12,19 +12,22 @@ export class ResetPasswordUseCase {
         private readonly passwordService: PasswordService,
     ) { }
 
-    async execute(token: string, newPassword: string): Promise<void> {
-        const userId = await this.tokenService.validatePasswordResetToken(token);
+    async execute(email: string, otp: string, newPassword: string): Promise<void> {
+        const isValid = await this.tokenService.validateOtp(email, otp);
 
-        if (!userId) {
-            throw new BadRequestException('Invalid or expired reset token');
+        if (!isValid) {
+            throw new BadRequestException('Invalid or expired OTP');
         }
 
-        const user = await this.userRepository.findById(userId);
+        const user = await this.userRepository.findByEmail(email);
         if (!user) {
             throw new NotFoundException('User not found');
         }
 
         user.passwordHash = await this.passwordService.hash(newPassword);
         await this.userRepository.save(user);
+
+        // Invalidate OTP after successful reset
+        await this.tokenService.invalidateOtp(email);
     }
 }

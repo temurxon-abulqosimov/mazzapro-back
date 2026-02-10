@@ -27,6 +27,7 @@ import {
   VerifyEmailDto,
   ForgotPasswordDto,
   ResetPasswordDto,
+  VerifyOtpDto,
 } from '../../application/dto';
 import {
   RegisterUserUseCase,
@@ -38,6 +39,7 @@ import {
   VerifyEmailUseCase,
   ForgotPasswordUseCase,
   ResetPasswordUseCase,
+  VerifyOtpUseCase,
 } from '../../application/use-cases';
 import { RefreshResult } from '../../application/use-cases/refresh-tokens.use-case';
 
@@ -54,6 +56,7 @@ export class AuthController {
     private readonly verifyEmailUseCase: VerifyEmailUseCase,
     private readonly forgotPasswordUseCase: ForgotPasswordUseCase,
     private readonly resetPasswordUseCase: ResetPasswordUseCase,
+    private readonly verifyOtpUseCase: VerifyOtpUseCase,
   ) { }
 
   @Post('register')
@@ -185,15 +188,27 @@ export class AuthController {
     return { message: 'If your email is registered, you will receive a reset code shortly' };
   }
 
+  @Post('verify-otp')
+  @Public()
+  @HttpCode(HttpStatus.OK)
+  @Throttle({ default: { limit: 5, ttl: 60000 } })
+  @ApiOperation({ summary: 'Verify OTP code' })
+  @ApiResponse({ status: 200, description: 'OTP verified successfully' })
+  @ApiResponse({ status: 400, description: 'Invalid or expired OTP' })
+  async verifyOtp(@Body() dto: VerifyOtpDto) {
+    await this.verifyOtpUseCase.execute(dto.email, dto.otp);
+    return { message: 'OTP verified successfully' };
+  }
+
   @Post('reset-password')
   @Public()
   @HttpCode(HttpStatus.OK)
   @Throttle({ default: { limit: 5, ttl: 60000 } })
-  @ApiOperation({ summary: 'Reset password with code' })
+  @ApiOperation({ summary: 'Reset password with OTP' })
   @ApiResponse({ status: 200, description: 'Password reset successfully' })
-  @ApiResponse({ status: 400, description: 'Invalid or expired token' })
+  @ApiResponse({ status: 400, description: 'Invalid or expired OTP' })
   async resetPassword(@Body() dto: ResetPasswordDto) {
-    await this.resetPasswordUseCase.execute(dto.token, dto.newPassword);
+    await this.resetPasswordUseCase.execute(dto.email, dto.otp, dto.newPassword);
     return { message: 'Password has been reset successfully' };
   }
 }

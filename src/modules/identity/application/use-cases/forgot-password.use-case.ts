@@ -19,7 +19,10 @@ export class ForgotPasswordUseCase {
             return;
         }
 
-        const token = await this.tokenService.createPasswordResetToken(user.id);
-        await this.emailService.sendForgotPasswordEmail(user.email, token);
+        // Generate 6-digit OTP
+        const otp = Math.floor(100000 + Math.random() * 900000).toString();
+
+        await this.tokenService.saveOtp(user.email, otp);
+        await this.emailService.sendForgotPasswordEmail(user.email, otp);
     }
 }
