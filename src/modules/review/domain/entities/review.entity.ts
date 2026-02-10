@@ -31,7 +31,7 @@ export class Review {
     @Column({ name: 'booking_id' })
     bookingId: string;
 
-    @OneToOne(() => Booking)
+    @OneToOne('Booking')
     @JoinColumn({ name: 'booking_id' })
     booking: Booking;
 

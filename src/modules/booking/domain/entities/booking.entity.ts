@@ -95,7 +95,7 @@ export class Booking {
   @Index()
   idempotencyKey: string | null;
 
-  @OneToOne(() => Payment, (payment) => payment.booking, { cascade: true })
+  @OneToOne('Payment', (payment: Payment) => payment.booking, { cascade: true })
   payment: Payment;
 
   @CreateDateColumn({ name: 'created_at' })
@@ -116,7 +116,7 @@ export class Booking {
   @Column({ name: 'cancellation_reason', type: 'text', nullable: true })
   cancellationReason: string | null;
 
-  @OneToOne(() => Review, (review) => review.booking)
+  @OneToOne('Review', (review: Review) => review.booking)
   review: Review;
 
   // Domain methods

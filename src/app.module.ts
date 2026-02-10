@@ -27,7 +27,6 @@ import { NotificationModule } from '@modules/notification/notification.module';
 import { FavoriteModule } from '@modules/favorite/favorite.module';
 import { MediaModule } from '@modules/media/media.module';
 import { AdminModule } from '@modules/admin/admin.module';
-import { SellerModule } from '@modules/seller/seller.module';
 import { ReviewModule } from '@modules/review/review.module';
 import { RedisModule } from '@common/redis/redis.module';
 import { HealthModule } from '@common/health';
@@ -141,7 +140,7 @@ import { EventEmitterModule } from '@nestjs/event-emitter';
     FavoriteModule,
     MediaModule,
     AdminModule,
-    SellerModule,
+    // SellerModule removed in favor of StoreModule to avoid route conflicts
     ReviewModule,
   ],
   providers: [

@@ -27,7 +27,7 @@ export class Payment {
   @Index()
   bookingId: string;
 
-  @OneToOne(() => Booking, (booking) => booking.payment)
+  @OneToOne('Booking', (booking: Booking) => booking.payment)
   @JoinColumn({ name: 'booking_id' })
   booking: Booking;
 
