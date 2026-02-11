@@ -77,8 +77,11 @@ export class RegisterUserUseCase {
 
     await this.refreshTokenRepository.save(refreshToken);
 
-    // Send verification email
-    await this.sendVerificationEmail(savedUser.id, savedUser.email);
+    // Send welcome registration email + verification email
+    await Promise.all([
+      this.emailService.sendWelcomeRegistrationEmail(savedUser.email, savedUser.fullName),
+      this.sendVerificationEmail(savedUser.id, savedUser.email),
+    ]);
 
     return {
       user: savedUser,
