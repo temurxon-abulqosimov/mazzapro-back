@@ -14,6 +14,7 @@ import {
   JwtTokenService,
   TokenPair,
 } from '../../infrastructure/services/jwt-token.service';
+import { EmailService } from '@modules/notification/infrastructure/services/email.service';
 import { GoogleAuthDto } from '../dto/google-auth.dto';
 import { UserRole } from '@common/types';
 
@@ -42,20 +43,16 @@ export class GoogleAuthUseCase {
     @Inject(REFRESH_TOKEN_REPOSITORY)
     private readonly refreshTokenRepository: IRefreshTokenRepository,
     private readonly jwtTokenService: JwtTokenService,
+    private readonly emailService: EmailService,
   ) {}
 
   async execute(dto: GoogleAuthDto): Promise<GoogleAuthResult> {
-    let googleId: string;
-    let email: string;
-    let fullName: string;
-    let avatarUrl: string | null;
-
-    // Try to verify as Firebase ID token first, then fall back to Google access token
+    // Verify the token — tries Firebase ID token, then Google access token, then Google ID token (tokeninfo)
     const tokenInfo = await this.verifyToken(dto.idToken);
-    googleId = tokenInfo.id;
-    email = tokenInfo.email.toLowerCase();
-    fullName = tokenInfo.name || email.split('@')[0] || 'User';
-    avatarUrl = tokenInfo.picture || null;
+    const googleId = tokenInfo.id;
+    const email = tokenInfo.email.toLowerCase();
+    const fullName = tokenInfo.name || email.split('@')[0] || 'User';
+    const avatarUrl = tokenInfo.picture || null;
 
     // Try to find user by Google ID first
     let user = await this.userRepository.findByGoogleId(googleId);
@@ -74,6 +71,7 @@ export class GoogleAuthUseCase {
         }
         user.emailVerified = true;
         user = await this.userRepository.save(user);
+        this.logger.log(`Linked Google account to existing user: ${email}`);
       } else {
         // Create new user
         user = new User();
@@ -89,6 +87,12 @@ export class GoogleAuthUseCase {
 
         user = await this.userRepository.save(user);
         isNewUser = true;
+        this.logger.log(`Created new user via Google: ${email}`);
+
+        // Send welcome email for new Google users (non-blocking)
+        this.emailService.sendWelcomeEmail(email, fullName).catch(err => {
+          this.logger.error(`Failed to send welcome email to ${email}`, err);
+        });
       }
     }
 
@@ -120,12 +124,13 @@ export class GoogleAuthUseCase {
   }
 
   private async verifyToken(token: string): Promise<GoogleUserInfo> {
-    // First try Firebase ID token verification
+    // Strategy 1: Try Firebase ID token verification
     try {
       const decodedToken = await admin.auth().verifyIdToken(token);
       if (!decodedToken.email) {
         throw new UnauthorizedException('Google account must have an email');
       }
+      this.logger.debug('Token verified via Firebase');
       return {
         id: decodedToken.uid,
         email: decodedToken.email,
@@ -133,36 +138,57 @@ export class GoogleAuthUseCase {
         picture: decodedToken.picture,
       };
     } catch (firebaseError) {
-      this.logger.debug(`Firebase token verification failed, trying Google access token: ${firebaseError.message}`);
+      this.logger.debug(`Firebase verification skipped: ${firebaseError.message}`);
     }
 
-    // Fall back to Google access token verification
+    // Strategy 2: Try as Google OAuth access token (from expo-auth-session)
     try {
-      const response = await fetch(`https://www.googleapis.com/oauth2/v3/userinfo`, {
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
+      const response = await fetch('https://www.googleapis.com/oauth2/v3/userinfo', {
+        headers: { Authorization: `Bearer ${token}` },
       });
 
-      if (!response.ok) {
-        throw new Error(`Google API returned ${response.status}`);
+      if (response.ok) {
+        const userInfo = await response.json();
+        if (!userInfo.email) {
+          throw new UnauthorizedException('Google account must have an email');
+        }
+        this.logger.debug('Token verified via Google userinfo (access token)');
+        return {
+          id: userInfo.sub,
+          email: userInfo.email,
+          name: userInfo.name,
+          picture: userInfo.picture,
+        };
       }
-
-      const userInfo = await response.json();
-
-      if (!userInfo.email) {
-        throw new UnauthorizedException('Google account must have an email');
-      }
-
-      return {
-        id: userInfo.sub,
-        email: userInfo.email,
-        name: userInfo.name,
-        picture: userInfo.picture,
-      };
-    } catch (googleError) {
-      this.logger.error(`Failed to verify Google token: ${googleError.message}`);
-      throw new UnauthorizedException('Invalid Google token');
+      this.logger.debug(`Google userinfo returned ${response.status}, trying tokeninfo...`);
+    } catch (accessTokenError) {
+      this.logger.debug(`Access token verification failed: ${accessTokenError.message}`);
     }
+
+    // Strategy 3: Try as Google ID token via tokeninfo endpoint
+    try {
+      const response = await fetch(
+        `https://oauth2.googleapis.com/tokeninfo?id_token=${encodeURIComponent(token)}`,
+      );
+
+      if (response.ok) {
+        const tokenInfo = await response.json();
+        if (!tokenInfo.email) {
+          throw new UnauthorizedException('Google account must have an email');
+        }
+        this.logger.debug('Token verified via Google tokeninfo (ID token)');
+        return {
+          id: tokenInfo.sub,
+          email: tokenInfo.email,
+          name: tokenInfo.name,
+          picture: tokenInfo.picture,
+        };
+      }
+    } catch (idTokenError) {
+      this.logger.debug(`ID token verification failed: ${idTokenError.message}`);
+    }
+
+    this.logger.error('All Google token verification strategies failed');
+    throw new UnauthorizedException('Invalid Google token — could not verify with any strategy');
   }
 }
