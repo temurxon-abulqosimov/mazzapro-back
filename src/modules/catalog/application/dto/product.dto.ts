@@ -48,17 +48,17 @@ export class CreateProductDto {
   @Max(100)
   quantity: number;
 
-  @ApiProperty({ example: '17:00', description: 'Pickup start time (HH:mm)' })
+  @ApiProperty({ example: '17:00', description: 'Pickup start time (HH:mm or ISO 8601 datetime)' })
   @IsString()
-  @Matches(/^([01]?[0-9]|2[0-3]):[0-5][0-9]$/, {
-    message: 'pickupWindowStart must be in HH:mm format',
+  @Matches(/^([01]?[0-9]|2[0-3]):[0-5][0-9]$|^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}/, {
+    message: 'pickupWindowStart must be in HH:mm or ISO datetime format',
   })
   pickupWindowStart: string;
 
-  @ApiProperty({ example: '20:00', description: 'Pickup end time (HH:mm)' })
+  @ApiProperty({ example: '20:00', description: 'Pickup end time (HH:mm or ISO 8601 datetime)' })
   @IsString()
-  @Matches(/^([01]?[0-9]|2[0-3]):[0-5][0-9]$/, {
-    message: 'pickupWindowEnd must be in HH:mm format',
+  @Matches(/^([01]?[0-9]|2[0-3]):[0-5][0-9]$|^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}/, {
+    message: 'pickupWindowEnd must be in HH:mm or ISO datetime format',
   })
   pickupWindowEnd: string;
 

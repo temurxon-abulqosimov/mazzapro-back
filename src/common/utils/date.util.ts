@@ -71,6 +71,14 @@ export function parseTimeToDate(
   timeString: string,
   baseDate: Date = new Date(),
 ): Date {
+  // If it looks like an ISO datetime string, parse it directly
+  if (timeString.includes('T')) {
+    const parsed = new Date(timeString);
+    if (!isNaN(parsed.getTime())) {
+      return parsed;
+    }
+  }
+  // Otherwise treat as HH:mm
   const [hours, minutes] = timeString.split(':').map(Number);
   const result = new Date(baseDate);
   result.setHours(hours, minutes, 0, 0);
