@@ -247,14 +247,14 @@ export class SellerOrderController {
       throw new UnauthorizedAccessException('User is not a seller');
     }
 
-    // Get the seller's store
-    const store = await this.storeRepository.findBySellerId(user.sellerId);
+    // Note: user.sellerId in JWT is actually the store ID (set during login)
+    const store = await this.storeRepository.findById(user.sellerId);
     if (!store) {
       throw new EntityNotFoundException('Store', user.sellerId);
     }
 
     const booking = await this.completeBookingUseCase.execute(
-      user.sellerId,
+      store.sellerId,
       store.id,
       dto.qrCodeData,
     );
