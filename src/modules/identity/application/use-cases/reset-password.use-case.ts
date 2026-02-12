@@ -12,14 +12,14 @@ export class ResetPasswordUseCase {
         private readonly passwordService: PasswordService,
     ) { }
 
-    async execute(email: string, otp: string, newPassword: string): Promise<void> {
-        const isValid = await this.tokenService.validateOtp(email, otp);
+    async execute(phoneNumber: string, otp: string, newPassword: string): Promise<void> {
+        const isValid = await this.tokenService.validateOtp(phoneNumber, otp);
 
         if (!isValid) {
             throw new BadRequestException('Invalid or expired OTP');
         }
 
-        const user = await this.userRepository.findByEmail(email);
+        const user = await this.userRepository.findByPhoneNumber(phoneNumber);
         if (!user) {
             throw new NotFoundException('User not found');
         }
@@ -28,6 +28,6 @@ export class ResetPasswordUseCase {
         await this.userRepository.save(user);
 
         // Invalidate OTP after successful reset
-        await this.tokenService.invalidateOtp(email);
+        await this.tokenService.invalidateOtp(phoneNumber);
     }
 }

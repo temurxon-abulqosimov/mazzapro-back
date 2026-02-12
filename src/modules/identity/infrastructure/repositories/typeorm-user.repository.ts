@@ -21,15 +21,22 @@ export class TypeOrmUserRepository implements IUserRepository {
     });
   }
 
-  async findByGoogleId(googleId: string): Promise<User | null> {
+  async findByPhoneNumber(phoneNumber: string): Promise<User | null> {
     return this.repository.findOne({
-      where: { googleId },
+      where: { phoneNumber },
     });
   }
 
   async existsByEmail(email: string): Promise<boolean> {
     const count = await this.repository.count({
       where: { email: email.toLowerCase() },
+    });
+    return count > 0;
+  }
+
+  async existsByPhoneNumber(phoneNumber: string): Promise<boolean> {
+    const count = await this.repository.count({
+      where: { phoneNumber },
     });
     return count > 0;
   }

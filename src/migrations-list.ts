@@ -13,3 +13,5 @@ export { FixFavoritesConstraints1738930000000 } from './migrations/1738930000000
 export { AddFollowsAndNotificationPreferences1770289085165 } from './migrations/1770289085165-AddFollowsAndNotificationPreferences';
 export { AddGoogleAuthFields1770389085165 } from './migrations/1770389085165-AddGoogleAuthFields';
 export { UpdateCategoryIcons1770489085165 } from './migrations/1770489085165-UpdateCategoryIcons';
+export { AddPhoneNumberToUsers1770589085165 } from './migrations/1770589085165-AddPhoneNumberToUsers';
+export { RemoveGoogleAuthFields1770689085165 } from './migrations/1770689085165-RemoveGoogleAuthFields';

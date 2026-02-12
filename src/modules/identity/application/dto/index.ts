@@ -4,7 +4,6 @@ export * from './auth-response.dto';
 export * from './refresh-token.dto';
 export * from './device-token.dto';
 export * from './update-profile.dto';
-export * from './google-auth.dto';
 export * from './verify-email.dto';
 export * from './forgot-password.dto';
 export * from './reset-password.dto';

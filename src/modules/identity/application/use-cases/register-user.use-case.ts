@@ -15,9 +15,9 @@ import {
   TokenPair,
 } from '../../infrastructure/services/jwt-token.service';
 import { TokenService } from '../../infrastructure/services/token.service';
-import { EmailService } from '@modules/notification/infrastructure/services/email.service';
+import { SmsService } from '@modules/notification/infrastructure/services/sms.service';
 import { RegisterDto } from '../dto/register.dto';
-import { EmailAlreadyExistsException } from '@common/exceptions';
+import { PhoneAlreadyExistsException } from '@common/exceptions';
 import { UserRole } from '@common/types';
 
 interface RegisterResult {
@@ -35,14 +35,14 @@ export class RegisterUserUseCase {
     private readonly passwordService: PasswordService,
     private readonly jwtTokenService: JwtTokenService,
     private readonly tokenService: TokenService,
-    private readonly emailService: EmailService,
+    private readonly smsService: SmsService,
   ) { }
 
   async execute(dto: RegisterDto): Promise<RegisterResult> {
-    // Check if email already exists
-    const emailExists = await this.userRepository.existsByEmail(dto.email);
-    if (emailExists) {
-      throw new EmailAlreadyExistsException(dto.email);
+    // Check if phone number already exists
+    const phoneExists = await this.userRepository.existsByPhoneNumber(dto.phoneNumber);
+    if (phoneExists) {
+      throw new PhoneAlreadyExistsException(dto.phoneNumber);
     }
 
     // Hash password
@@ -50,11 +50,13 @@ export class RegisterUserUseCase {
 
     // Create user entity
     const user = new User();
-    user.email = dto.email.toLowerCase();
+    user.phoneNumber = dto.phoneNumber;
+    user.email = null;
     user.passwordHash = passwordHash;
     user.fullName = dto.fullName;
     user.marketId = dto.marketId;
     user.role = UserRole.CONSUMER;
+    user.authProvider = 'phone';
     if (dto.lat !== undefined) user.lat = dto.lat;
     if (dto.lng !== undefined) user.lng = dto.lng;
 
@@ -64,7 +66,7 @@ export class RegisterUserUseCase {
     // Generate token pair
     const tokens = await this.jwtTokenService.generateTokenPair({
       id: savedUser.id,
-      email: savedUser.email,
+      email: savedUser.phoneNumber || '',
       role: savedUser.role,
       marketId: savedUser.marketId,
     });
@@ -77,11 +79,8 @@ export class RegisterUserUseCase {
 
     await this.refreshTokenRepository.save(refreshToken);
 
-    // Send welcome registration email + verification email
-    await Promise.all([
-      this.emailService.sendWelcomeRegistrationEmail(savedUser.email, savedUser.fullName),
-      this.sendVerificationEmail(savedUser.id, savedUser.email),
-    ]);
+    // Send verification SMS
+    await this.sendVerificationSms(savedUser.id, savedUser.phoneNumber!);
 
     return {
       user: savedUser,
@@ -89,8 +88,8 @@ export class RegisterUserUseCase {
     };
   }
 
-  private async sendVerificationEmail(userId: string, email: string): Promise<void> {
-    const token = await this.tokenService.createVerificationToken(userId);
-    await this.emailService.sendVerificationEmail(email, token);
+  private async sendVerificationSms(userId: string, phoneNumber: string): Promise<void> {
+    const code = await this.tokenService.createVerificationToken(userId);
+    await this.smsService.sendVerificationCode(phoneNumber, code);
   }
 }

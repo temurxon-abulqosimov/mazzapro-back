@@ -1,22 +1,20 @@
 import { Injectable, NotFoundException, Inject } from '@nestjs/common';
 import { TokenService } from '../../infrastructure/services/token.service';
-import { EmailService } from '@modules/notification/infrastructure/services/email.service';
 import { IUserRepository, USER_REPOSITORY } from '../../domain/repositories';
 
 @Injectable()
 export class VerifyEmailUseCase {
     constructor(
         private readonly tokenService: TokenService,
-        private readonly emailService: EmailService,
         @Inject(USER_REPOSITORY)
         private readonly userRepository: IUserRepository,
     ) { }
 
-    async execute(token: string): Promise<void> {
+    async execute(phoneNumber: string, token: string): Promise<void> {
         const userId = await this.tokenService.validateVerificationToken(token);
 
         if (!userId) {
-            throw new NotFoundException('Invalid or expired verification token');
+            throw new NotFoundException('Invalid or expired verification code');
         }
 
         const user = await this.userRepository.findById(userId);
@@ -24,13 +22,16 @@ export class VerifyEmailUseCase {
             throw new NotFoundException('User not found');
         }
 
-        if (user.emailVerified) {
+        // Verify that the phone number matches
+        if (user.phoneNumber !== phoneNumber) {
+            throw new NotFoundException('Invalid verification code');
+        }
+
+        if (user.phoneVerified) {
             return; // Already verified
         }
 
-        user.emailVerified = true;
+        user.phoneVerified = true;
         await this.userRepository.save(user);
-
-        await this.emailService.sendWelcomeEmail(user.email, user.fullName);
     }
 }

@@ -11,7 +11,7 @@ import { NOTIFICATION_REPOSITORY } from './domain/repositories';
 import { TypeOrmNotificationRepository } from './infrastructure/repositories';
 import { FcmService } from './infrastructure/services';
 import { ExpoPushService } from './infrastructure/services/expo-push.service';
-import { EmailService } from './infrastructure/services/email.service';
+import { SmsService } from './infrastructure/services/sms.service';
 import { ProductCreatedListener } from './infrastructure/listeners/product-created.listener';
 
 // Application
@@ -44,7 +44,7 @@ import { IdentityModule } from '../identity/identity.module';
     // Services
     FcmService,
     ExpoPushService,
-    EmailService,
+    SmsService,
     ProductCreatedListener,
 
     // Use Cases
@@ -56,7 +56,7 @@ import { IdentityModule } from '../identity/identity.module';
     SendNotificationUseCase,
     FcmService,
     ExpoPushService,
-    EmailService,
+    SmsService,
     NOTIFICATION_REPOSITORY,
   ],
 })

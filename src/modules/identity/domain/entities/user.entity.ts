@@ -17,9 +17,13 @@ export class User {
   @PrimaryGeneratedColumn('uuid')
   id: string;
 
-  @Column({ unique: true })
+  @Column({ unique: true, nullable: true })
   @Index()
-  email: string;
+  email: string | null;
+
+  @Column({ name: 'phone_number', unique: true, nullable: true })
+  @Index()
+  phoneNumber: string | null;
 
   @Column({ name: 'password_hash', type: 'varchar', nullable: true })
   passwordHash: string | null;
@@ -56,12 +60,11 @@ export class User {
   @Column({ name: 'email_verified', default: false })
   emailVerified: boolean;
 
-  @Column({ name: 'google_id', type: 'varchar', nullable: true, unique: true })
-  @Index()
-  googleId: string | null;
+  @Column({ name: 'phone_verified', default: false })
+  phoneVerified: boolean;
 
-  @Column({ name: 'auth_provider', type: 'varchar', length: 20, default: 'email' })
-  authProvider: 'email' | 'google';
+  @Column({ name: 'auth_provider', type: 'varchar', length: 20, default: 'phone' })
+  authProvider: 'phone';
 
   @CreateDateColumn({ name: 'created_at' })
   createdAt: Date;

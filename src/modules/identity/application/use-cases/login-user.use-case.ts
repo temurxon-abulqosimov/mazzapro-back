@@ -47,8 +47,8 @@ export class LoginUserUseCase {
   ) { }
 
   async execute(dto: LoginDto): Promise<LoginResult> {
-    // Find user by email
-    const user = await this.userRepository.findByEmail(dto.email);
+    // Find user by phone number
+    const user = await this.userRepository.findByPhoneNumber(dto.phoneNumber);
     if (!user) {
       throw new InvalidCredentialsException();
     }
@@ -91,7 +91,7 @@ export class LoginUserUseCase {
     // Generate token pair
     const tokens = await this.jwtTokenService.generateTokenPair({
       id: user.id,
-      email: user.email,
+      email: user.phoneNumber || user.email || '',
       role: user.role,
       marketId: user.marketId,
       sellerId: storeId,

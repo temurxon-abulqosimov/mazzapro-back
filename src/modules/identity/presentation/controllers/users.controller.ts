@@ -72,6 +72,7 @@ export class UsersController {
       user: {
         id: user.id,
         email: user.email,
+        phoneNumber: user.phoneNumber,
         fullName: user.fullName,
         avatarUrl: user.avatarUrl,
         role: user.role,
@@ -109,6 +110,7 @@ export class UsersController {
       user: {
         id: user.id,
         email: user.email,
+        phoneNumber: user.phoneNumber,
         fullName: user.fullName,
         avatarUrl: user.avatarUrl,
         role: user.role,

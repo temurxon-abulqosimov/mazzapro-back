@@ -23,7 +23,6 @@ import {
   RefreshTokenDto,
   RegisterDeviceTokenDto,
   AuthResponseDto,
-  GoogleAuthDto,
   VerifyEmailDto,
   ForgotPasswordDto,
   ResetPasswordDto,
@@ -35,7 +34,6 @@ import {
   RefreshTokensUseCase,
   LogoutUserUseCase,
   RegisterDeviceTokenUseCase,
-  GoogleAuthUseCase,
   VerifyEmailUseCase,
   ForgotPasswordUseCase,
   ResetPasswordUseCase,
@@ -52,7 +50,6 @@ export class AuthController {
     private readonly refreshTokensUseCase: RefreshTokensUseCase,
     private readonly logoutUserUseCase: LogoutUserUseCase,
     private readonly registerDeviceTokenUseCase: RegisterDeviceTokenUseCase,
-    private readonly googleAuthUseCase: GoogleAuthUseCase,
     private readonly verifyEmailUseCase: VerifyEmailUseCase,
     private readonly forgotPasswordUseCase: ForgotPasswordUseCase,
     private readonly resetPasswordUseCase: ResetPasswordUseCase,
@@ -64,13 +61,14 @@ export class AuthController {
   @Throttle({ default: { limit: 10, ttl: 60000 } })
   @ApiOperation({ summary: 'Register a new user' })
   @ApiResponse({ status: 201, description: 'User registered successfully' })
-  @ApiResponse({ status: 409, description: 'Email already exists' })
+  @ApiResponse({ status: 409, description: 'Phone number already exists' })
   async register(@Body() dto: RegisterDto): Promise<AuthResponseDto> {
     const result = await this.registerUserUseCase.execute(dto);
     return {
       user: {
         id: result.user.id,
         email: result.user.email,
+        phoneNumber: result.user.phoneNumber,
         fullName: result.user.fullName,
         avatarUrl: result.user.avatarUrl,
         role: result.user.role,
@@ -85,7 +83,7 @@ export class AuthController {
   @Public()
   @HttpCode(HttpStatus.OK)
   @Throttle({ default: { limit: 10, ttl: 60000 } })
-  @ApiOperation({ summary: 'Login with email and password' })
+  @ApiOperation({ summary: 'Login with phone number and password' })
   @ApiResponse({ status: 200, description: 'Login successful' })
   @ApiResponse({ status: 401, description: 'Invalid credentials' })
   async login(@Body() dto: LoginDto): Promise<AuthResponseDto> {
@@ -94,6 +92,7 @@ export class AuthController {
       user: {
         id: result.user.id,
         email: result.user.email,
+        phoneNumber: result.user.phoneNumber,
         fullName: result.user.fullName,
         avatarUrl: result.user.avatarUrl,
         role: result.user.role,
@@ -101,30 +100,6 @@ export class AuthController {
         createdAt: result.user.createdAt,
       },
       tokens: result.tokens,
-    };
-  }
-
-  @Post('google')
-  @Public()
-  @HttpCode(HttpStatus.OK)
-  @Throttle({ default: { limit: 10, ttl: 60000 } })
-  @ApiOperation({ summary: 'Sign in with Google' })
-  @ApiResponse({ status: 200, description: 'Google sign-in successful' })
-  @ApiResponse({ status: 401, description: 'Invalid Google ID token' })
-  async googleAuth(@Body() dto: GoogleAuthDto): Promise<AuthResponseDto & { isNewUser: boolean }> {
-    const result = await this.googleAuthUseCase.execute(dto);
-    return {
-      user: {
-        id: result.user.id,
-        email: result.user.email,
-        fullName: result.user.fullName,
-        avatarUrl: result.user.avatarUrl,
-        role: result.user.role,
-        marketId: result.user.marketId,
-        createdAt: result.user.createdAt,
-      },
-      tokens: result.tokens,
-      isNewUser: result.isNewUser,
     };
   }
 
@@ -169,23 +144,23 @@ export class AuthController {
   @Public()
   @HttpCode(HttpStatus.OK)
   @Throttle({ default: { limit: 5, ttl: 60000 } })
-  @ApiOperation({ summary: 'Verify email address with code' })
-  @ApiResponse({ status: 200, description: 'Email verified successfully' })
+  @ApiOperation({ summary: 'Verify phone number with code' })
+  @ApiResponse({ status: 200, description: 'Phone verified successfully' })
   @ApiResponse({ status: 400, description: 'Invalid or expired token' })
   async verifyEmail(@Body() dto: VerifyEmailDto) {
-    await this.verifyEmailUseCase.execute(dto.token);
-    return { message: 'Email verified successfully' };
+    await this.verifyEmailUseCase.execute(dto.phoneNumber, dto.token);
+    return { message: 'Phone number verified successfully' };
   }
 
   @Post('forgot-password')
   @Public()
   @HttpCode(HttpStatus.OK)
   @Throttle({ default: { limit: 3, ttl: 60000 } })
-  @ApiOperation({ summary: 'Request password reset with email' })
-  @ApiResponse({ status: 200, description: 'If email exists, reset code sent' })
+  @ApiOperation({ summary: 'Request password reset with phone number' })
+  @ApiResponse({ status: 200, description: 'If phone exists, reset code sent' })
   async forgotPassword(@Body() dto: ForgotPasswordDto) {
-    await this.forgotPasswordUseCase.execute(dto.email);
-    return { message: 'If your email is registered, you will receive a reset code shortly' };
+    await this.forgotPasswordUseCase.execute(dto.phoneNumber);
+    return { message: 'If your phone number is registered, you will receive a reset code shortly' };
   }
 
   @Post('verify-otp')
@@ -196,7 +171,7 @@ export class AuthController {
   @ApiResponse({ status: 200, description: 'OTP verified successfully' })
   @ApiResponse({ status: 400, description: 'Invalid or expired OTP' })
   async verifyOtp(@Body() dto: VerifyOtpDto) {
-    await this.verifyOtpUseCase.execute(dto.email, dto.otp);
+    await this.verifyOtpUseCase.execute(dto.phoneNumber, dto.otp);
     return { message: 'OTP verified successfully' };
   }
 
@@ -208,7 +183,7 @@ export class AuthController {
   @ApiResponse({ status: 200, description: 'Password reset successfully' })
   @ApiResponse({ status: 400, description: 'Invalid or expired OTP' })
   async resetPassword(@Body() dto: ResetPasswordDto) {
-    await this.resetPasswordUseCase.execute(dto.email, dto.otp, dto.newPassword);
+    await this.resetPasswordUseCase.execute(dto.phoneNumber, dto.otp, dto.newPassword);
     return { message: 'Password has been reset successfully' };
   }
 }

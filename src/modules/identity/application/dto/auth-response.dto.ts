@@ -5,8 +5,11 @@ export class UserResponseDto {
   @ApiProperty()
   id: string;
 
-  @ApiProperty()
-  email: string;
+  @ApiProperty({ nullable: true })
+  email: string | null;
+
+  @ApiProperty({ nullable: true })
+  phoneNumber: string | null;
 
   @ApiProperty()
   fullName: string;
@@ -47,8 +50,11 @@ export class UserProfileResponseDto {
   @ApiProperty()
   id: string;
 
-  @ApiProperty()
-  email: string;
+  @ApiProperty({ nullable: true })
+  email: string | null;
+
+  @ApiProperty({ nullable: true })
+  phoneNumber: string | null;
 
   @ApiProperty()
   fullName: string;

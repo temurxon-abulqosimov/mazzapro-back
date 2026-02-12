@@ -85,7 +85,7 @@ export class SellerApplicationPendingException extends DomainException {
 
 export class InvalidCredentialsException extends DomainException {
   constructor() {
-    super('INVALID_CREDENTIALS', 'Invalid email or password');
+    super('INVALID_CREDENTIALS', 'Invalid phone number or password');
     this.name = 'InvalidCredentialsException';
   }
 }
@@ -94,6 +94,13 @@ export class EmailAlreadyExistsException extends DomainException {
   constructor(email: string) {
     super('EMAIL_ALREADY_EXISTS', `Email ${email} is already registered`);
     this.name = 'EmailAlreadyExistsException';
+  }
+}
+
+export class PhoneAlreadyExistsException extends DomainException {
+  constructor(phoneNumber: string) {
+    super('PHONE_ALREADY_EXISTS', `Phone number ${phoneNumber} is already registered`);
+    this.name = 'PhoneAlreadyExistsException';
   }
 }
 

@@ -56,7 +56,7 @@ export class RefreshTokensUseCase {
     // Generate new access token
     const accessToken = await this.jwtTokenService.generateAccessToken({
       id: user.id,
-      email: user.email,
+      email: user.phoneNumber || user.email || '',
       role: user.role,
       marketId: user.marketId,
     });
