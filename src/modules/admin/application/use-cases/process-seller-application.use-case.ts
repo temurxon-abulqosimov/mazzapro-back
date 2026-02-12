@@ -5,6 +5,7 @@ import { NotFoundException, ValidationException } from '@common/exceptions/domai
 import { SellerApplicationAction } from '../dto';
 import { ISellerRepository, SELLER_REPOSITORY } from './get-pending-sellers.use-case';
 import { User } from '@modules/identity/domain/entities/user.entity';
+import { IStoreRepository, STORE_REPOSITORY } from '@modules/store/domain/repositories';
 
 // Notification use case interface
 export interface ISendNotificationUseCase {
@@ -26,6 +27,8 @@ export class ProcessSellerApplicationUseCase {
   constructor(
     @Inject(SELLER_REPOSITORY)
     private readonly sellerRepository: ISellerRepository,
+    @Inject(STORE_REPOSITORY)
+    private readonly storeRepository: IStoreRepository,
     @Inject(SEND_NOTIFICATION_USE_CASE)
     private readonly sendNotificationUseCase: ISendNotificationUseCase,
     @InjectRepository(User)
@@ -59,6 +62,14 @@ export class ProcessSellerApplicationUseCase {
       }
       user.promoteToSeller();
       await this.userRepository.save(user);
+
+      // Activate the seller's store
+      const store = await this.storeRepository.findBySellerId(seller.id);
+      if (store) {
+        store.activate();
+        await this.storeRepository.save(store);
+        this.logger.log(`Store ${store.id} activated for seller ${sellerId}`);
+      }
 
       // Send approval notification
       await this.sendNotificationUseCase.execute({

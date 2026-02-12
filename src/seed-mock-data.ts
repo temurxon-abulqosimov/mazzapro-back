@@ -78,10 +78,10 @@ async function seedMockData() {
         sellerId: sellers[0].id,
         name: 'Fresh Daily Bakery',
         description: 'Artisan breads and pastries baked fresh daily',
-        address: '123 Broadway, New York, NY 10007',
-        city: 'New York',
-        lat: 40.7128,
-        lng: -74.0060,
+        address: 'Chorsu Bozori, Toshkent',
+        city: 'Toshkent',
+        lat: 41.3267,
+        lng: 69.2292,
         imageUrl: 'https://images.unsplash.com/photo-1509440159596-0249088772ff?w=800',
         rating: 4.5,
         categoryId: categories[0].id,
@@ -91,10 +91,10 @@ async function seedMockData() {
         sellerId: sellers[1].id,
         name: 'Cozy Corner Cafe',
         description: 'Your neighborhood cafe with fresh coffee and sandwiches',
-        address: '456 5th Avenue, New York, NY 10018',
-        city: 'New York',
-        lat: 40.7580,
-        lng: -73.9855,
+        address: 'Amir Temur Maydoni, Toshkent',
+        city: 'Toshkent',
+        lat: 41.3111,
+        lng: 69.2797,
         imageUrl: 'https://images.unsplash.com/photo-1554118811-1e0d58224f24?w=800',
         rating: 4.7,
         categoryId: categories[1].id,
@@ -104,10 +104,10 @@ async function seedMockData() {
         sellerId: sellers[2].id,
         name: 'Green Market Grocery',
         description: 'Organic produce and local goods',
-        address: '789 Madison Ave, New York, NY 10065',
-        city: 'New York',
-        lat: 40.7689,
-        lng: -73.9658,
+        address: 'Sergeli Bozori, Toshkent',
+        city: 'Toshkent',
+        lat: 41.2580,
+        lng: 69.2190,
         imageUrl: 'https://images.unsplash.com/photo-1543083115-638c32cd3d58?w=800',
         rating: 4.3,
         categoryId: categories[2].id,
@@ -123,7 +123,13 @@ async function seedMockData() {
         ) VALUES (
           $1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, 0, true, NOW(), NOW()
         )
-        ON CONFLICT (id) DO NOTHING
+        ON CONFLICT (id) DO UPDATE SET
+          lat = EXCLUDED.lat,
+          lng = EXCLUDED.lng,
+          address = EXCLUDED.address,
+          city = EXCLUDED.city,
+          is_active = true,
+          updated_at = NOW()
       `, [
         store.id, store.sellerId, marketId, store.name, store.description,
         store.address, store.city, store.lat, store.lng, store.imageUrl, store.rating
@@ -143,7 +149,7 @@ async function seedMockData() {
     const now = new Date();
     const pickupStart = new Date(now.getTime() + 2 * 60 * 60 * 1000); // 2 hours from now
     const pickupEnd = new Date(now.getTime() + 5 * 60 * 60 * 1000); // 5 hours from now
-    const expiresAt = new Date(now.getTime() + 24 * 60 * 60 * 1000); // 24 hours from now
+    const expiresAt = new Date(now.getTime() + 30 * 24 * 60 * 60 * 1000); // 30 days from now
 
     const products = [
       // Bakery Products
@@ -253,7 +259,12 @@ async function seedMockData() {
         ) VALUES (
           $1, $2, $3, $4, $5, $6, $7, $8, 0, $9, $10, 'ACTIVE', $11, NOW(), NOW()
         )
-        ON CONFLICT (id) DO NOTHING
+        ON CONFLICT (id) DO UPDATE SET
+          pickup_window_start = EXCLUDED.pickup_window_start,
+          pickup_window_end = EXCLUDED.pickup_window_end,
+          expires_at = EXCLUDED.expires_at,
+          status = 'ACTIVE',
+          updated_at = NOW()
       `, [
         product.id, product.storeId, product.categoryId, product.name,
         product.description, product.originalPrice, product.discountedPrice,

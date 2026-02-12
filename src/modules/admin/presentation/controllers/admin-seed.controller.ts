@@ -374,4 +374,31 @@ export class AdminSeedController {
         '4 categories, 3 sellers, 3 stores, and 7 products with images created',
     };
   }
+
+  @Post('fix-stores')
+  @Public()
+  @ApiOperation({ summary: 'Fix store locations and activation' })
+  async fixStores(): Promise<any> {
+    // 1. Activate all inactive stores
+    const activated = await this.dataSource.query(
+      `UPDATE stores SET is_active = true, updated_at = NOW() WHERE is_active = false`
+    );
+
+    // 2. Move San Francisco stores to Tashkent
+    const moved = await this.dataSource.query(
+      `UPDATE stores SET lat = 41.2995, lng = 69.2401, city = 'Tashkent', address = 'Yunusobod, Toshkent', updated_at = NOW() WHERE city = 'San Francisco'`
+    );
+
+    // 3. Refresh expired products
+    const refreshed = await this.dataSource.query(
+      `UPDATE products SET expires_at = NOW() + INTERVAL '30 days', pickup_window_start = NOW() + INTERVAL '2 hours', pickup_window_end = NOW() + INTERVAL '5 hours', status = 'ACTIVE', updated_at = NOW() WHERE expires_at < NOW() OR status != 'ACTIVE'`
+    );
+
+    // 4. Verify
+    const stores = await this.dataSource.query(
+      `SELECT name, city, lat, lng, is_active, (SELECT COUNT(*) FROM products p WHERE p.store_id = stores.id AND p.status = 'ACTIVE' AND p.expires_at > NOW()) as active_products FROM stores`
+    );
+
+    return { message: 'Stores fixed', activated, moved, refreshed, stores };
+  }
 }
