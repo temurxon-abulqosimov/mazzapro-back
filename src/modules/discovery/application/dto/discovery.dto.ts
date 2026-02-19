@@ -161,6 +161,7 @@ export class DiscoveryProductResponseDto {
     icon: string | null;
   };
   distance: number;
+  createdAt: Date;
   isFavorited?: boolean;
 }
 
@@ -173,6 +174,8 @@ export class MapMarkerDto {
   name?: string;
   imageUrl?: string;
   count?: number;
+  minPrice?: number;
+  storeId?: string;
   bounds?: string;
 }
 

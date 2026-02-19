@@ -15,7 +15,7 @@ import { DiscoveryService } from '../../application/services';
 @ApiTags('Discovery')
 @Controller('discovery')
 export class DiscoveryController {
-  constructor(private readonly discoveryService: DiscoveryService) {}
+  constructor(private readonly discoveryService: DiscoveryService) { }
 
   @Get('products')
   @Public()
@@ -71,6 +71,19 @@ export class DiscoveryController {
   @ApiResponse({ status: 200, description: 'Map markers' })
   async getMapMarkers(@Query() dto: MapBoundsDto) {
     const markers = await this.discoveryService.getMapMarkers(dto);
+    return {
+      data: {
+        markers,
+      },
+    };
+  }
+
+  @Get('stores/map')
+  @Public()
+  @ApiOperation({ summary: 'Get stores for map view with lowest product price' })
+  @ApiResponse({ status: 200, description: 'Map markers for stores' })
+  async getStoreMapMarkers(@Query() dto: MapBoundsDto) {
+    const markers = await this.discoveryService.getStoreMapMarkers(dto);
     return {
       data: {
         markers,

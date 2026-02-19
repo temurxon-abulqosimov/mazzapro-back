@@ -50,6 +50,7 @@ interface RawProductResult {
   category_name: string;
   category_slug: string;
   category_icon: string | null;
+  product_created_at: Date;
   distance: string;
 }
 
@@ -161,6 +162,7 @@ export class DiscoveryService {
         'category.name AS category_name',
         'category.slug AS category_slug',
         'category.icon AS category_icon',
+        'product.created_at AS product_created_at',
         `${distanceFormula} AS distance`,
       ])
       .where('product.status = :status', { status: ProductStatus.ACTIVE })
@@ -280,6 +282,7 @@ export class DiscoveryService {
           icon: raw.category_icon,
         },
         distance: Number(raw.distance),
+        createdAt: new Date(raw.product_created_at),
         isFavorited: favoriteSet.has(raw.product_id),
       };
     });
@@ -490,6 +493,67 @@ export class DiscoveryService {
     }));
   }
 
+  async getStoreMapMarkers(dto: any): Promise<any[]> {
+    // Parse bounds
+    const [swLat, swLng, neLat, neLng] = dto.bounds.split(',').map(Number);
+
+    // Get ALL active stores within bounds (regardless of whether they have products)
+    const stores = await this.storeRepository
+      .createQueryBuilder('store')
+      .select([
+        'store.id AS store_id',
+        'store.name AS store_name',
+        'store.image_url AS store_image_url',
+        'store.lat AS lat',
+        'store.lng AS lng',
+        'store.rating AS store_rating',
+      ])
+      .where('store.is_active = :isActive', { isActive: true })
+      .andWhere('store.lat BETWEEN :swLat AND :neLat', { swLat, neLat })
+      .andWhere('store.lng BETWEEN :swLng AND :neLng', { swLng, neLng })
+      .take(100)
+      .getRawMany();
+
+    // Get product counts and min prices for these stores (only active, non-expired)
+    const storeIds = stores.map(s => s.store_id);
+    let productStats = new Map<string, { minPrice: number; count: number }>();
+
+    if (storeIds.length > 0) {
+      const stats = await this.productRepository
+        .createQueryBuilder('product')
+        .select('product.store_id', 'storeId')
+        .addSelect('MIN(product.discounted_price)', 'min_price')
+        .addSelect('COUNT(product.id)', 'count')
+        .where('product.store_id IN (:...storeIds)', { storeIds })
+        .andWhere('product.status = :status', { status: ProductStatus.ACTIVE })
+        .andWhere('product.expires_at > :now', { now: new Date() })
+        .groupBy('product.store_id')
+        .getRawMany();
+
+      for (const s of stats) {
+        productStats.set(s.storeId, {
+          minPrice: Number(s.min_price),
+          count: Number(s.count),
+        });
+      }
+    }
+
+    return stores.map(s => {
+      const stats = productStats.get(s.store_id);
+      return {
+        type: 'store',
+        id: s.store_id,
+        lat: Number(s.lat),
+        lng: Number(s.lng),
+        minPrice: stats?.minPrice || 0,
+        count: stats?.count || 0,
+        name: s.store_name,
+        imageUrl: s.store_image_url,
+        rating: Number(s.store_rating),
+      };
+    });
+  }
+
   async search(dto: SearchDto): Promise<{ products: DiscoveryProductResponseDto[]; stores: any[] }> {
     const { q, lat, lng, radius = 10, limit = 20 } = dto;
     const searchTerm = `%${q.toLowerCase()}%`;
@@ -523,6 +587,7 @@ export class DiscoveryService {
       'category.name AS category_name',
       'category.slug AS category_slug',
       'category.icon AS category_icon',
+      'product.created_at AS product_created_at',
     ];
 
     if (hasGeo) {
@@ -622,6 +687,7 @@ export class DiscoveryService {
           icon: raw.category_icon,
         },
         distance: Number(raw.distance),
+        createdAt: new Date(raw.product_created_at),
       };
     });
 
