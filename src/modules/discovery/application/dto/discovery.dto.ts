@@ -166,7 +166,7 @@ export class DiscoveryProductResponseDto {
 }
 
 export class MapMarkerDto {
-  type: 'product' | 'cluster';
+  type: 'product' | 'cluster' | 'store';
   id?: string;
   lat: number;
   lng: number;
@@ -177,6 +177,7 @@ export class MapMarkerDto {
   minPrice?: number;
   storeId?: string;
   bounds?: string;
+  rating?: number;
 }
 
 export class SearchDto extends PaginationDto {
